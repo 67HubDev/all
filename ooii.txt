@@ -146,7 +146,7 @@ local function RunLoadingSystem()
         task.wait(0.8)
     end
     
-    PlaySound("117084877592917")
+    PlaySound("140385303603086")
     task.wait(0.5)
     LoadingGui:Destroy()
 end
@@ -310,7 +310,7 @@ local Window = Rayfield:CreateWindow({
    }
 })
 
-PlaySound("140385303603086")
+PlaySound("117084877592917")
 
 local function Notify(title, content)
     Rayfield:Notify({ Title = title, Content = content, Duration = 4, Image = 4483362458 })
