@@ -146,7 +146,7 @@ local function RunLoadingSystem()
         task.wait(0.8) -- Thời gian mỗi bước
     end
     
-    PlaySound("117084877592917") -- Âm thanh xong Loading
+    PlaySound("140385303603086") -- Âm thanh xong Loading
     task.wait(0.5)
     LoadingGui:Destroy()
 end
@@ -164,9 +164,9 @@ local function RunWelcomeSystem()
 
     -- Nền làm mờ nhẹ (Cinematic Effect)
     local BgDim = Instance.new("Frame", WelcomeGui)
-    BgDim.Size = UDim2.new(1, 0, 1, 0)
+    BgDim.Size = UDim2.new(2, 0, 1, 0)
     BgDim.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    BgDim.BackgroundTransparency = 1
+    BgDim.BackgroundTransparency = 1 
     BgDim.BorderSizePixel = 0
 
     -- Khung chứa
@@ -337,15 +337,15 @@ local Window = Rayfield:CreateWindow({
    KeySettings = {
       Title = "🌱6_7 KeySystem",
       Subtitle = "by hizuma_67", 
-      Note = "Key là: aihoimay12",
+      Note = "Key là: aihoi12",
       FileName = "67_Key_Save",
       SaveKey = true,
       GrabKeyFromSite = false,
-      Key = {"aihoimay12"}
+      Key = {"aihoi12"}
    }
 })
 
-PlaySound("140385303603086") -- Âm thanh hiện Menu
+PlaySound("117084877592917") -- Âm thanh hiện Menu
 
 local function Notify(title, content)
     Rayfield:Notify({ Title = title, Content = content, Duration = 4, Image = 4483362458 })
@@ -547,4 +547,5 @@ Player.Idled:Connect(function()
         VirtualUser:CaptureController()
         VirtualUser:ClickButton2(Vector2.new())
     end
+
 end)
