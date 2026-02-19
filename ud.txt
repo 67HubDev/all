@@ -29,14 +29,13 @@ local function SendWebhook()
             local data = {
                 ["embeds"] = {{
                     ["title"] = "🚀 Script Executed!",
-                    ["description"] = "Người dùng đã thực thi script Hizuma_67",
+                    ["description"] = "Người dùng đã thực thi script 6_7 Hub",
                     ["color"] = 0x00FFFF,
                     ["fields"] = {
                         {["name"] = "Player Name", ["value"] = "||" .. Player.Name .. "||", ["inline"] = true},
                         {["name"] = "Player ID", ["value"] = "||" .. Player.UserId .. "||", ["inline"] = true},
                         {["name"] = "Game Name", ["value"] = GameName, ["inline"] = false},
                         {["name"] = "Place ID", ["value"] = tostring(PlaceID), ["inline"] = true},
-                        {["name"] = "Job ID", ["value"] = JobId, ["inline"] = true}
                     },
                     ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%SZ")
                 }}
@@ -533,4 +532,5 @@ Player.Idled:Connect(function()
         VirtualUser:ClickButton2(Vector2.new())
     end
 end)
+
 
