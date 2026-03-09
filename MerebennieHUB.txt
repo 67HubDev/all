@@ -1,0 +1,4 @@
+script_key = "paste your key here" -- Paste your key inside here
+local encoded = "aHR0cHM6Ly9hcGkuZ2V0cG9sc2VjLmNvbS9zY3JpcHRzL2hvc3RlZC8wN2M2NmZlYjBiYmNlZGJmMTYwYjRlNjEwMmFkZGIyMDE1NmI5YzY0MzQ0ZjU0MjhmOGFkYWIwMWI1NmZkNzAzLmx1YQ=="
+local url = crypt.base64.decode(encoded)
+loadstring(game:HttpGet(url))()
