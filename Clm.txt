@@ -1,0 +1,4377 @@
+--[[
+    Hizuma_67 - PREMIER EDITION (FIXED, OPTIMIZED & UPGRADED)
+    Cập nhật: 
+    - Giữ nguyên 100% code gốc của người dùng.
+    - FIX LỖI LOADING: Loading chạy xong mới hiện Key System.
+    - Thêm Tab Âm Nhạc PROMAX (Hệ thống quản lý Sound ID thông minh).
+    - Slider chỉnh âm lượng (Volume) phía trên nút Stop.
+]]
+-- [HỆ THỐNG KIỂM TRA TRẠNG THÁI GAME]
+if not game:IsLoaded() then
+    -- Thông báo cho người dùng biết game đang tải
+    pcall(function()
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "⏳ 6_7 HUB",
+            Text = "Game chưa tải xong, vui lòng đợi trong giây lát...",
+            Duration = 10
+        })
+    end)
+    
+    -- Lệnh chờ game load hoàn tất
+    game.Loaded:Wait()
+    
+    -- Thông báo sau khi đã tải xong và chuẩn bị hiện script 
+    pcall(function()
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "✅ 6_7 HUB",
+            Text = "Game đã sẵn sàng! Đang khởi chạy hệ thống...",
+            Duration = 5
+        })
+    end)
+    task.wait(1) -- Nghỉ 1 giây để đảm bảo mọi thứ ổn định
+end
+
+--[[ 
+    (nội dung header / thông báo, giữ nguyên)
+    ... (giữ nguyên phần đầu file)
+--]]
+
+-- ==========================================
+-- [HỆ THỐNG KIỂM TRA RE-EXECUTE TOÀN CẦU]
+-- ==========================================
+local isReExecution = _G.Hizuma67_Loaded == true
+_G.Hizuma67_Loaded = true
+
+-- [FIX]: TẠO BỘ ĐẾM EXECUTE ĐỂ CHẶN LUỒNG CŨ
+_G.Hizuma67_ExecuteCount = (_G.Hizuma67_ExecuteCount or 0) + 1
+local currentExecute = _G.Hizuma67_ExecuteCount
+
+-- HỆ THỐNG TỰ ĐỘNG DỌN DẸP (ANTI-RE-EXECUTE) - ENHANCED
+
+pcall(function()
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local CoreGui = game:GetService("CoreGui")
+local SoundService = game:GetService("SoundService")
+local Lighting = game:GetService("Lighting")
+local ContextActionService = game:GetService("ContextActionService")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+
+-- 0) Lưu trạng thái gốc vào _G để các phần khác của script có thể restore sau này  
+pcall(function()  
+    if settings and settings().Rendering then  
+        _G.originalQuality = (pcall(function() return settings().Rendering.QualityLevel end) and settings().Rendering.QualityLevel) or _G.originalQuality  
+    end  
+    if LocalPlayer and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then  
+        _G.originalWalkSpeed = _G.originalWalkSpeed or LocalPlayer.Character.Humanoid.WalkSpeed  
+    end  
+    _G.originalBrightness = _G.originalBrightness or Lighting.Brightness  
+    _G.originalClockTime = _G.originalClockTime or Lighting.ClockTime  
+    _G.originalFogEnd = _G.originalFogEnd or Lighting.FogEnd  
+    _G.originalGlobalShadows = _G.originalGlobalShadows or Lighting.GlobalShadows  
+end)  
+
+-- 1) Dừng và xóa nhạc/stoppable sounds có tiền tố "67" (an toàn)  
+pcall(function()  
+    for _, s in ipairs(SoundService:GetChildren()) do  
+        if s:IsA("Sound") and tostring(s.Name):match("^67_") then  
+            pcall(function() if s.Playing then s:Stop() end end)  
+            pcall(function() s:Destroy() end)  
+        end  
+    end  
+    -- kiểm tra workspace (trường hợp sound đặt ở workspace)  
+    for _, s in ipairs(Workspace:GetDescendants()) do  
+        if s:IsA("Sound") and tostring(s.Name):match("^67_") then  
+            pcall(function() if s.Playing then s:Stop() end end)  
+            pcall(function() s:Destroy() end)  
+        end  
+    end  
+    -- thêm: xóa mọi sound chứa "67" (an toàn) ở khắp nơi  
+    for _, s in ipairs(SoundService:GetChildren()) do  
+        if s:IsA("Sound") and tostring(s.Name):match("67") then  
+            pcall(function() if s.Playing then s:Stop() end end)  
+            pcall(function() s:Destroy() end)  
+        end  
+    end  
+    for _, s in ipairs(Workspace:GetDescendants()) do  
+        if s:IsA("Sound") and tostring(s.Name):match("67") then  
+            pcall(function() if s.Playing then s:Stop() end end)  
+            pcall(function() s:Destroy() end)  
+        end  
+    end  
+end)  
+
+-- 2) RESET HIỂN THỊ NGƯỜI CHƠI (an toàn hơn, bao gồm Decal/Texture/Mesh)  
+pcall(function()  
+    for _, p in ipairs(Players:GetPlayers()) do  
+        if p ~= LocalPlayer and p.Character then  
+            for _, part in ipairs(p.Character:GetDescendants()) do  
+                local ok, isBase = pcall(function() return part:IsA("BasePart") end)  
+                if ok and isBase then  
+                    if part.Name ~= "HumanoidRootPart" then  
+                        pcall(function() part.Transparency = 0 end)  
+                        pcall(function() if part:IsA("MeshPart") then part.TextureID = part.TextureID end end)  
+                    end  
+                else  
+                    -- decals/textures  
+                    local ok2, isDecal = pcall(function() return part:IsA("Decal") or part:IsA("Texture") end)  
+                    if ok2 and isDecal then  
+                        pcall(function() part.Transparency = 0 end)  
+                    end  
+                end  
+            end  
+        end  
+    end  
+end)  
+
+-- 3) HÀM DỌN CHUNG: xóa các GUI / Instance cũ theo tên/tiền tố  
+local function CleanOldElementsIn(parent)  
+    if not parent or not parent.GetChildren then return end  
+    for _, child in pairs(parent:GetChildren()) do  
+        local name = tostring(child.Name or "")  
+        if name == "6_7_Extended_Load"  
+           or name:find("67_AFK_System_")  
+           or name == "Rayfield"  
+           or name == "67_Status_HUD_v1"  
+           or name:match("^67_") then  
+            pcall(function() child:Destroy() end)  
+        end  
+    end  
+end  
+
+pcall(function() CleanOldElementsIn(CoreGui) end)  
+pcall(function()  
+    if LocalPlayer then  
+        local pg = LocalPlayer:FindFirstChild("PlayerGui")  
+        CleanOldElementsIn(pg)  
+    end  
+end)  
+
+-- 4) Xóa các Instance Rayfield/GUI global nếu tồn tại ở _G  
+pcall(function()  
+    if _G.Rayfield then  
+        local rf = _G.Rayfield  
+        if type(rf) == "table" then  
+            if type(rf.Destroy) == "function" then pcall(rf.Destroy, rf) end  
+            if type(rf.Close) == "function" then pcall(rf.Close, rf) end  
+            if type(rf.Unload) == "function" then pcall(rf.Unload, rf) end  
+        elseif typeof(rf) == "Instance" then  
+            pcall(function() rf:Destroy() end)  
+        end  
+        _G.Rayfield = nil  
+    end  
+end)  
+
+-- 5) Dọn Status HUD (an toàn cho obfuscator) & tắt vòng cập nhật nếu có  
+pcall(function()  
+    _G.ShowStatusHUD = false  
+    if type(_G.destroyStatusHUD) == "function" then  
+        pcall(_G.destroyStatusHUD)  
+    end  
+    -- xóa thủ công nếu vẫn tồn  
+    local hudName = "67_Status_HUD_v1"  
+    pcall(function()  
+        local coreHud = CoreGui:FindFirstChild(hudName)  
+        if coreHud then coreHud:Destroy() end  
+    end)  
+    pcall(function()  
+        if LocalPlayer then  
+            local pg = LocalPlayer:FindFirstChild("PlayerGui")  
+            if pg then  
+                local hud = pg:FindFirstChild(hudName)  
+                if hud then hud:Destroy() end  
+            end  
+        end  
+    end)  
+end)  
+
+-- 6) Gỡ bindings / actions phổ biến (nếu có)  
+pcall(function()  
+    local toUnbind = {"ToggleHUD","SomeHotkeyAction","ToggleAFK","ToggleMusic","ToggleStatusHUD"}  
+    for _, name in ipairs(toUnbind) do  
+        pcall(function() ContextActionService:UnbindAction(name) end)  
+    end  
+end)  
+
+-- 7) Ngắt connections được lưu vào _G  
+pcall(function()  
+    if type(_G._connections) == "table" then  
+        for _, conn in ipairs(_G._connections) do  
+            pcall(function() if conn and conn.Disconnect then conn:Disconnect() end end)  
+            pcall(function() if conn and conn.disconnect then conn:disconnect() end end)  
+        end  
+        _G._connections = nil  
+    end  
+end)  
+
+-- 8) Thử phục hồi __namecall nếu script cũ backup vào _G (không ép buộc)  
+pcall(function()  
+    local success, mt = pcall(function() return getrawmetatable(game) end)  
+    if success and mt then  
+        local ok, old = pcall(function() return _G.__old_namecall or _G.oldNamecall end)  
+        if ok and old and type(old) == "function" then  
+            pcall(function()  
+                setreadonly(mt, false)  
+                mt.__namecall = old  
+                setreadonly(mt, true)  
+            end)  
+        end  
+    end  
+end)  
+
+-- 9) Reset global flags an toàn  
+pcall(function() _G.AntiAFK = false end)  
+pcall(function() _G.AntiKick = false end)  
+pcall(function() _G.ShowStatusHUD = false end)
+
+-- 10) (Option) Khôi phục Lighting nếu trước đó đã lưu trong _G  
+pcall(function()  
+    if _G.originalBrightness ~= nil then Lighting.Brightness = _G.originalBrightness end  
+    if _G.originalClockTime ~= nil then Lighting.ClockTime = _G.originalClockTime end  
+    if _G.originalFogEnd ~= nil then Lighting.FogEnd = _G.originalFogEnd end  
+    if _G.originalGlobalShadows ~= nil then Lighting.GlobalShadows = _G.originalGlobalShadows end  
+end)  
+
+-- 11) Đóng / Destroy / Unload các object / table / function thường lưu ở _G  
+pcall(function()  
+    local commonKeys = {"_functions","Functions","CloseFunctions","_listeners","_threads","_tasks","_loops","Connections","_modules","_widgets"}  
+    for _, key in ipairs(commonKeys) do  
+        local v = _G[key]  
+        if type(v) == "table" then  
+            for k, obj in pairs(v) do  
+                pcall(function()  
+                    if type(obj) == "function" then pcall(obj) end  
+                    if type(obj) == "table" then  
+                        if type(obj.Destroy) == "function" then pcall(obj.Destroy, obj) end  
+                        if type(obj.Close) == "function" then pcall(obj.Close, obj) end  
+                        if type(obj.Unload) == "function" then pcall(obj.Unload, obj) end  
+                        if type(obj.Disconnect) == "function" then pcall(obj.Disconnect, obj) end  
+                        if type(obj.disconnect) == "function" then pcall(obj.disconnect, obj) end  
+                    end  
+                end)  
+            end  
+        elseif type(v) == "function" then  
+            pcall(v)  
+        elseif typeof(v) == "Instance" then  
+            pcall(function() v:Destroy() end)  
+        end  
+        _G[key] = nil  
+    end  
+end)  
+
+-- 12) Ngắt các connection RunService / Heartbeat  
+pcall(function()  
+    local connKeys = {"_renderConn","_heartbeatConn","_steppedConn","_rendersteppedConn","_rsConn","_hbConn","_runConn","_loopConn"}  
+    for _, k in ipairs(connKeys) do  
+        local c = _G[k]  
+        if c then  
+            pcall(function() if c.Connected then c:Disconnect() end end)  
+            _G[k] = nil  
+        end  
+    end  
+end)  
+
+-- 13) Xóa / Destroy Bindable / Remote / GUI có prefix "67_" trong CoreGui & PlayerGui  
+pcall(function()  
+    local function cleanGuiFor(parent)  
+        if not parent or not parent.GetDescendants then return end  
+        for _, inst in ipairs(parent:GetDescendants()) do  
+            local ok, name = pcall(function() return tostring(inst.Name) end)  
+            if ok and name and name:match("^67_") then  
+                pcall(function() if inst.Destroy then inst:Destroy() end end)  
+            end  
+        end  
+    end  
+    cleanGuiFor(CoreGui)  
+    if LocalPlayer then  
+        local pg = LocalPlayer:FindFirstChild("PlayerGui")  
+        cleanGuiFor(pg)  
+    end  
+end)  
+
+-- 14) Gắng dừng coroutine / threads  
+pcall(function()  
+    if type(_G._coroutines) == "table" then  
+        for _, co in ipairs(_G._coroutines) do  
+            pcall(function()  
+                if type(co) == "thread" then  
+                    _G._shouldStop = true  
+                elseif type(co) == "function" then  
+                    pcall(co)  
+                end  
+            end)  
+        end  
+        _G._coroutines = nil  
+    end  
+    if type(_G._threads) == "table" then  
+        _G._threads = nil  
+    end  
+end)  
+
+-- 15) Xóa một số global tạm thời  
+pcall(function()  
+    local clear = {"_AUTO_LOAD","_LOADER","_MUSIC_ID","_music","_tempGui","LowGpu","LoadUi"}  
+    for _, k in ipairs(clear) do _G[k] = nil end  
+end)  
+
+-- 16) Tăng thêm an toàn: thử tìm và dừng mọi hàm unload/close/destroy global  
+pcall(function()  
+    for k, v in pairs(_G) do  
+        if type(k) == "string" and (k:lower():find("unload") or k:lower():find("close") or k:lower():find("destroy") or k:lower():find("stop")) then  
+            pcall(function() if type(v) == "function" then v() end end)  
+            _G[k] = nil  
+        end  
+    end  
+end)  
+
+-- 17) Thông báo nhẹ (Chỉ hiện khi chạy lần đầu, không bị spam khi Re-Execute)  
+if not isReExecution then
+    pcall(function()  
+        game:GetService("StarterGui"):SetCore("SendNotification", {  
+            Title = "🇻🇳 6_7 HUB",  
+            Text = "🎉 Chào mừng bạn đến với 6_7 HUB",  
+            Duration = 4  
+        })  
+    end)
+end
+
+end)
+----------------------------------------------------------------
+-- HỆ THỐNG THÔNG BÁO TOÀN CẦU (ROBLOX DEFAULT SYSTEM)
+----------------------------------------------------------------
+local function ShowGlobalAnnouncement()
+    local StarterGui = game:GetService("StarterGui")
+    local HttpService = game:GetService("HttpService")
+   
+    -- 1. Lấy nội dung cập nhật từ GitHub
+    local success, content = pcall(function()
+        return game:HttpGet("https://raw.githubusercontent.com/67HubDev/67hub/refs/heads/main/ggs.lua")
+    end)
+    
+    if not success or content == "" then
+        content = "Chào mừng bạn đến với 6_7 HUB!\nHãy tham gia Discord..."
+    end
+
+    -- 2. Tạo BindableFunction để xử lý khi bấm nút
+    local NotificationBindable = Instance.new("BindableFunction")
+    NotificationBindable.OnInvoke = function(buttonName)
+        if buttonName == "Copy Discord" then
+            local clipSuccess = pcall(function()
+                if setclipboard then
+                    setclipboard("https://discord.gg/6DUQ23jrb") 
+                end
+            end)
+            
+            StarterGui:SetCore("SendNotification", {
+                Title = "Hệ thống",
+                Text = clipSuccess and "Đã sao chép link Discord!" or "Lỗi: Executor không hỗ trợ copy.",
+                Duration = 5
+            })
+        end
+    end
+
+    -- 3. Gọi hệ thống thông báo mặc định của Roblox
+    task.delay(2, function()
+        pcall(function()
+            StarterGui:SetCore("SendNotification", {
+                Title = "[🌱] Script Đã Update",
+                Text = content,
+                Duration = 10,
+                Button1 = "OK",
+                Button2 = "Copy Discord",
+                Callback = NotificationBindable
+            })
+        end)
+    end)
+end
+
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local MarketplaceService = game:GetService("MarketplaceService")
+local VirtualUser = game:GetService("VirtualUser")
+local Lighting = game:GetService("Lighting")
+local ContextActionService = game:GetService("ContextActionService")
+
+----------------------------------------------------------------
+-- HỆ THỐNG ÂM THANH & NHẠC (UPDATE PROMAX)
+----------------------------------------------------------------
+local CurrentMusic = nil
+local CurrentVolume = 2 
+
+local function PlaySound(id)
+    task.spawn(function()
+        pcall(function()
+            local s = Instance.new("Sound")
+            s.Name = "67_PlaySound_SFX" -- [FIX]: Đặt tiền tố 67_ để hệ thống tự quét và xóa khi Re-execute
+            s.SoundId = "rbxassetid://" .. id
+            s.Volume = 1
+            s.Parent = workspace 
+            s:Play()
+            s.Ended:Connect(function() s:Destroy() end)
+        end)
+    end)
+end
+
+
+local function PlayMusic(id, name)
+    pcall(function()
+        if CurrentMusic then
+            CurrentMusic:Stop()
+            CurrentMusic:Destroy()
+            CurrentMusic = nil
+        end
+        
+        local s = Instance.new("Sound")
+        s.Name = "67_Music_System"
+        s.SoundId = "rbxassetid://" .. id
+        s.Volume = CurrentVolume
+        s.Looped = true
+        s.Parent = game:GetService("SoundService") 
+        s:Play()
+        CurrentMusic = s
+        
+        if _G.Rayfield then
+            _G.Rayfield:Notify({
+                Title = "🎶 Music Playing",
+                Content = "Đang phát: " .. (name or id),
+                Duration = 5,
+                Image = 12623879295
+            })
+        end
+    end)
+end
+
+----------------------------------------------------------------
+-- HỆ THỐNG GUI AN TOÀN
+----------------------------------------------------------------
+-- HỆ THỐNG GUI AN TOÀN
+local function GetSafeGui()
+    local success, core = pcall(function()
+        return game:GetService("CoreGui")
+    end)
+    if success and core then
+        return core
+    end
+
+    local Players = game:GetService("Players")
+    local lp = Players.LocalPlayer
+    if lp then
+        return lp:WaitForChild("PlayerGui")
+    end
+
+    return game:GetService("CoreGui")
+end
+
+local ScreenParent = GetSafeGui()
+
+local AFKGui = Instance.new("ScreenGui")
+AFKGui.Name = "67_AFK_System_" .. math.random(100, 999)
+AFKGui.IgnoreGuiInset = true
+AFKGui.DisplayOrder = 5 
+AFKGui.Parent = ScreenParent
+
+local AFKFrame = Instance.new("Frame")
+AFKFrame.Size = UDim2.new(1, 0, 1, 0)
+AFKFrame.Visible = false
+AFKFrame.BorderSizePixel = 0
+AFKFrame.ZIndex = 1
+AFKFrame.Parent = AFKGui
+
+----------------------------------------------------------------
+-- 1. HỆ THỐNG LOADING GALAXY STYLE (FIXED)
+----------------------------------------------------------------
+local LoadingGui = Instance.new("ScreenGui")
+LoadingGui.Name = "6_7_Extended_Load"
+LoadingGui.IgnoreGuiInset = true
+LoadingGui.DisplayOrder = 10000
+LoadingGui.Parent = ScreenParent
+
+local Overlay = Instance.new("Frame")
+Overlay.Size = UDim2.new(1, 0, 1, 0)
+Overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+Overlay.BackgroundTransparency = 1
+Overlay.Parent = LoadingGui
+TweenService:Create(Overlay, TweenInfo.new(0.5), {BackgroundTransparency = 0.5}):Play()
+
+local GlowFrame = Instance.new("Frame")
+GlowFrame.Size = UDim2.new(0, 380, 0, 200)
+GlowFrame.Position = UDim2.new(0.5, -190, 0.5, -100)
+GlowFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+GlowFrame.BackgroundTransparency = 0.8
+GlowFrame.Parent = LoadingGui
+local GlowCorner = Instance.new("UICorner")
+GlowCorner.CornerRadius = UDim.new(0, 15)
+GlowCorner.Parent = GlowFrame
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 360, 0, 180)
+MainFrame.Position = UDim2.new(0.5, -180, 0.5, -90)
+MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10) 
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+MainFrame.Parent = LoadingGui
+
+local UniverseBg = Instance.new("ImageLabel")
+UniverseBg.Name = "UniverseBackground"
+UniverseBg.Size = UDim2.new(1, 0, 1, 0)
+UniverseBg.BackgroundTransparency = 1
+UniverseBg.Image = "rbxassetid://5323900286" 
+UniverseBg.ScaleType = Enum.ScaleType.Crop
+UniverseBg.ImageTransparency = 0.1 
+UniverseBg.ZIndex = 1
+UniverseBg.Parent = MainFrame
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 12)
+MainCorner.Parent = MainFrame
+
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Thickness = 3.5
+UIStroke.Color = Color3.fromRGB(255, 0, 0)
+UIStroke.Parent = MainFrame
+
+local TitleLoad = Instance.new("TextLabel")
+TitleLoad.Size = UDim2.new(1, 0, 0, 60)
+TitleLoad.Position = UDim2.new(0, 0, 0.1, 0)
+TitleLoad.Text = "6_7 HUB"
+TitleLoad.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLoad.TextSize = 36
+TitleLoad.Font = Enum.Font.GothamBold
+TitleLoad.BackgroundTransparency = 1
+TitleLoad.ZIndex = 2
+TitleLoad.Parent = MainFrame
+
+local TitleGlow = Instance.new("UIStroke")
+TitleGlow.Thickness = 2
+TitleGlow.Color = Color3.fromRGB(255, 0, 0)
+TitleGlow.Transparency = 0.5
+TitleGlow.Parent = TitleLoad
+
+local TitleGradient = Instance.new("UIGradient")
+TitleGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 255, 255))
+})
+TitleGradient.Parent = TitleLoad
+
+local BarBack = Instance.new("Frame")
+BarBack.Size = UDim2.new(0, 280, 0, 7)
+BarBack.Position = UDim2.new(0.5, -140, 0.68, 0)
+BarBack.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+BarBack.Parent = MainFrame
+BarBack.ZIndex = 2
+
+local BarFill = Instance.new("Frame")
+BarFill.Size = UDim2.new(0, 0, 1, 0)
+BarFill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+BarFill.Parent = BarBack
+BarFill.ZIndex = 2
+local FillGradient = Instance.new("UIGradient")
+FillGradient.Color = ColorSequence.new(Color3.fromRGB(0, 255, 255), Color3.fromRGB(0, 150, 255))
+FillGradient.Parent = BarFill
+
+local StatusText = Instance.new("TextLabel")
+StatusText.Size = UDim2.new(1, 0, 0, 20)
+StatusText.Position = UDim2.new(0, 0, 0.82, 0)
+StatusText.Text = "Khởi động hệ thống..."
+StatusText.TextColor3 = Color3.fromRGB(255, 255, 255) 
+StatusText.TextSize = 12
+StatusText.Font = Enum.Font.GothamMedium
+StatusText.BackgroundTransparency = 1
+StatusText.ZIndex = 2
+StatusText.Parent = MainFrame
+
+task.spawn(function()
+    while LoadingGui and LoadingGui.Parent do
+        local t = tick()
+        local rainbow = Color3.fromHSV((t % 5) / 5, 0.8, 1)
+        if UIStroke and UIStroke.Parent then UIStroke.Color = rainbow end
+        if GlowFrame and GlowFrame.Parent then GlowFrame.BackgroundColor3 = rainbow end
+        if TitleGlow and TitleGlow.Parent then TitleGlow.Color = rainbow end
+        if TitleGradient and TitleGradient.Parent then TitleGradient.Rotation = math.sin(t) * 45 end
+        task.wait(0.05)
+    end
+end)
+----------------------------------------------------------------
+-- LOGIC HỆ THỐNG RAYFIELD (ĐÃ SỬA LINK & LOGIC GAME)
+----------------------------------------------------------------
+local function StartRayfield()
+    local PlaceID = game.PlaceId
+    local UniverseID = game.GameId
+    local GameName = "Unknown"
+    pcall(function()
+        local gameInfo = MarketplaceService:GetProductInfo(PlaceID)
+        GameName = gameInfo.Name
+    end)
+    local LowGameName = string.lower(GameName)
+
+    -- [HỆ THỐNG PHÂN LOẠI GAME - ĐÃ SỬA LỖI KHAI BÁO]
+    local isJumpShowdown = false
+    if string.find(LowGameName, "jump showdown") or string.find(LowGameName, "jump showndown") or PlaceID == 18519254033 then
+        isJumpShowdown = true
+    end
+
+    local isJJS = false
+    if not isJumpShowdown then 
+        if string.find(LowGameName, "jujutsu") or string.find(LowGameName, "shenanigan") or string.find(LowGameName, "jjs") or 
+           UniverseID == 3760416955 or PlaceID == 10450270085 then 
+            isJJS = true
+        end
+    end
+
+    local isTSB = false
+    if not isJumpShowdown and not isJJS then
+        if string.find(LowGameName, "strongest") or UniverseID == 3751717616 or PlaceID == 10449761463 then
+            isTSB = true
+        end
+    end
+
+    local isBloxFruit = false
+    if not isJumpShowdown and not isJJS and not isTSB then
+        if string.find(LowGameName, "blox fruit") or PlaceID == 2753915549 or PlaceID == 4442272183 or PlaceID == 7449423635 then
+            isBloxFruit = true
+        end
+    end
+
+    local isEscapeTsunami = false
+    if string.find(LowGameName, "escape tsunami") or PlaceID == 131623223084840 then
+        isEscapeTsunami = true
+    end 
+
+    -- [MỚI FIX] Đưa Titan-Fishing lên kiểm tra trước để tránh xung đột với chữ "fish"
+    local isTitanFishing = false
+    if string.find(LowGameName, "titan-fishing") or PlaceID == 115893378298440 then
+        isTitanFishing = true
+    end
+
+    -- SỬA LỖI: Thêm điều kiện (not isTitanFishing) để tránh hiện nhầm tab Fish
+    local isFishIt = false
+    local isFish = false
+
+    if not isTitanFishing then
+        if string.find(LowGameName, "fish it") or PlaceID == 121864768012064 then
+            isFishIt = true
+        elseif string.find(LowGameName, "fish") or PlaceID == 16732694052 then
+            isFish = true
+        end
+    end
+
+    local isMM2 = false
+    if string.find(LowGameName, "murder mystery 2") or string.find(LowGameName, "mm2") or PlaceID == 142823291 then
+        isMM2 = true
+    end
+
+    local isGardenHorizons = false
+    if string.find(LowGameName, "garden horizons") then
+        isGardenHorizons = true
+    end
+    
+    local isEvadeGame = false
+    if string.find(LowGameName, "evade") or PlaceID == 9872472334 then
+        isEvadeGame = true
+    end
+    
+    local isDoors = false
+    if string.find(LowGameName, "doors") or PlaceID == 6516141723 then
+        isDoors = true
+    end
+    
+    local is99Nights = false
+    if string.find(LowGameName, "99 nights in forest") or PlaceID == 79546208627805 then
+        is99Nights = true
+    end
+    
+    local isKnockout = false
+    if string.find(LowGameName, "knockout") or PlaceID == 16008852324 then
+        isKnockout = true
+    end
+    
+    _G.AntiKick = true
+    task.spawn(function()
+        pcall(function()
+            local mt = getrawmetatable(game)
+            local oldNamecall = mt.__namecall
+            setreadonly(mt, false)
+            mt.__namecall = newcclosure(function(self, ...)
+                local method = getnamecallmethod()
+                if _G.AntiKick and self == Player and (method == "Kick" or method == "kick") then
+                    return nil
+                end
+                return oldNamecall(self, ...)
+            end)
+            setreadonly(mt, true)
+        end)
+    end)
+
+ -- safe loader: tải remote script bằng pcall + thông báo lỗi nếu không tải được
+local function safeLoadRemote(url)
+    local HttpService = game:GetService("HttpService")
+    local ok, body = pcall(function() return game:HttpGet(url, true) end)
+    if not ok or not body or body == "" then
+        pcall(function()
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "Lỗi tải", Text = "Không tải được: "..tostring(url), Duration = 5
+            })
+        end)
+        return nil
+    end
+
+    local ok2, fn = pcall(function() return loadstring(body) end)
+    if not ok2 or not fn then
+        return nil
+    end
+
+    local suc, ret = pcall(fn)
+    if not suc then
+        pcall(function()
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "Lỗi Rayfield", Text = tostring(ret), Duration = 5
+            })
+        end)
+        return nil
+    end
+
+    return ret -- ret thường là table/object do script trả về (Rayfield)
+end
+
+-- secure Rayfield load (thay cho loadstring trực tiếp)
+local Rayfield = safeLoadRemote('https://sirius.menu/rayfield')
+_G.Rayfield = Rayfield
+if not Rayfield then
+    pcall(function()
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Lỗi", Text = "Thư viện GUI (Rayfield) không tải được. Dừng script.", Duration = 6
+        })
+    end)
+    return
+end
+        local Window = Rayfield:CreateWindow({
+       Name = "「6_7 HUB BETA」 | " .. (GameName or "Main Menu"),
+       Icon = 111544445642010,
+       LoadingTitle = "「⌛」Đang mở Menu 6_7...",
+       LoadingSubtitle = "Đang tải dữ liệu...",
+       ConfigurationSaving = { Enabled = false, FolderName = "Hizuma_Config", FileName = "Main" },
+       KeySystem = false
+    })
+PlaySound("123324188310290")
+-- === Thêm: Thông báo kiểu Roblox khi menu / loading xong ===
+local StarterGui = game:GetService("StarterGui")
+
+local function RobloxNotify(title, text, duration)
+    duration = duration or 5
+    pcall(function()
+        StarterGui:SetCore("SendNotification", {
+            Title = tostring(title or "6_7 HUB"),
+            Text = tostring(text or ""),
+            Duration = tonumber(duration) or 5
+        })
+    end)
+end
+
+-- Gửi 1 thông báo nhẹ sau khi Window được tạo (thời gian delay nhỏ để Rayfield hoàn thiện)
+task.delay(0.6, function()
+    -- nếu Rayfield/Window tồn tại thì thông báo menu đã sẵn sàng
+    pcall(function()
+        RobloxNotify("✅ 6_7 HUB", "Menu đã tải xong — sẵn sàng sử dụng!", 6)
+    end)
+end)
+
+-- Nếu bạn có LoadingGui (ví dụ tên "6_7_Extended_Load"), ẩn/đóng nó an toàn và báo
+task.spawn(function()
+    pcall(function()
+        local parent = LoadingGui and LoadingGui.Parent and LoadingGui.Parent or game:GetService("CoreGui")
+        if LoadingGui and LoadingGui.Parent then
+            -- optional: tween mờ dần rồi destroy (an toàn)
+            pcall(function()
+                if LoadingGui:FindFirstChild("Overlay") and LoadingGui.Overlay:IsA("Frame") then
+                    local ok, tween = pcall(function()
+                        return game:GetService("TweenService"):Create(LoadingGui.Overlay, TweenInfo.new(0.35), {BackgroundTransparency = 1})
+                    end)
+                    if ok and tween then
+                        tween:Play()
+                        tween.Completed:Wait()
+                    end
+                end
+            end)
+            pcall(function() LoadingGui:Destroy() end)
+        end
+    end)
+end)
+-- === Kết thúc phần thông báo ===
+        local function Notify(title, content)
+        local decalID = 11630044194 -- Icon mặc định (dành cho copy link, lỗi, v.v.)
+        
+        -- Nếu nội dung thông báo có chứa chữ "load script" (tức là đang bật game script)
+        if string.find(string.lower(content), "load script") then
+            decalID = 17223303970 -- ✨ THAY ID DECAL BẠN MUỐN HIỂN THỊ VÀO ĐÂY ✨
+        end
+
+        Rayfield:Notify({ Title = title, Content = content, Duration = 4, Image = decalID })
+    end
+-- Khởi tạo biến đếm lượt copy (Giữ nguyên giá trị khi re-execute script)
+getgenv().CopyScriptCount = getgenv().CopyScriptCount or 0
+-- ===== SAFE HELPERS (fallbacks nếu môi trường thiếu) =====
+if type(Notify) ~= "function" then
+    Notify = function(title, msg)
+        pcall(function() print(("Notify - %s: %s"):format(tostring(title), tostring(msg))) end)
+    end
+end
+
+if type(NotifySafe) ~= "function" then
+    NotifySafe = function(title, msg)
+        pcall(function() print(("NotifySafe - %s: %s"):format(tostring(title), tostring(msg))) end)
+    end
+end
+
+if type(CopyToClipboardSafe) ~= "function" then
+    CopyToClipboardSafe = function(text)
+        local ok, err = pcall(function()
+            if setclipboard then
+                setclipboard(text)
+                return true
+            else
+                print("Clipboard fallback. Please copy manually:\n" .. tostring(text))
+                return false
+            end
+        end)
+        if not ok then
+            print("CopyToClipboardSafe error:", err)
+            return false
+        end
+        return true
+    end
+end
+
+-- fallback safeLoad nếu không có (Đã tích hợp Check Script Sống/Chết)
+if type(safeLoad) ~= "function" then
+    safeLoad = function(name, url)
+        if getgenv().CopyScriptMode then
+            if getgenv().CopyScriptCount >= 3 then
+                pcall(function() Notify(name, "❌ Đã hết lượt copy (Tối đa 3 lần)!") end)
+                return false
+            end
+            
+            local codeToCopy = 'loadstring(game:HttpGet("' .. url .. '"))()'
+            local ok = pcall(function()
+                if setclipboard then setclipboard(codeToCopy) end
+            end)
+            
+            if ok then
+                getgenv().CopyScriptCount = getgenv().CopyScriptCount + 1
+                pcall(function() Notify(name, "✅ Đã copy script vào clipboard!\n(" .. getgenv().CopyScriptCount .. "/3)") end)
+            else
+                pcall(function() Notify(name, "❌ Executor không hỗ trợ copy!") end)
+            end
+            return true
+        end
+
+        pcall(function() Notify(name, "Đang thực hiện tải dữ liệu an toàn, vui lòng chờ...") end)
+     
+        local ok, result = pcall(function()
+            local code = game:HttpGet(url, true)
+            if code == "404: Not Found" or code == "Not Found" or string.find(code, "404 Not Found") or string.find(code, "400: Invalid Request") then
+                return "DEAD_SCRIPT"
+            end
+            
+            if code then
+                local fn = loadstring(code)
+                if fn then
+                    fn()
+                    return "SUCCESS"
+                else
+                    return "SYNTAX_ERROR"
+                end
+            end
+            return "NO_CODE"
+        end)
+                  
+        if not ok then
+            if tostring(result):find("404") or tostring(result):find("Not Found") then
+                pcall(function() Notify(name, "❌ Script này đã bị xóa bởi tác giả!") end)
+            else
+                pcall(function() Notify(name, "Quá trình tải thất bại... "..tostring(result)) end)
+            end
+            return nil
+        elseif result == "DEAD_SCRIPT" then
+            pcall(function() Notify(name, "❌ Script này đã bị xóa bởi tác giả!") end)
+            return nil
+        elseif result == "SYNTAX_ERROR" then
+            pcall(function() Notify(name, "❌ Script bị lỗi cú pháp, không thể chạy!") end)
+            return nil
+        end
+                  
+        pcall(function() Notify(name, "✅ Quá trình tải thành công!") end)
+        return true
+    end
+end
+
+-- ===== START: Smart LowMode & Safe loader wrapper =====
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+local Players = game:GetService("Players")
+
+_G.LowModeEnabled = _G.LowModeEnabled or false
+_G.CurrentFPS = 60
+_G.CurrentPing = 50
+
+task.spawn(function()
+    local frames = 0
+    local lastUpdate = tick()
+    RunService.RenderStepped:Connect(function()
+        frames = frames + 1
+        local now = tick()
+        if now - lastUpdate >= 1 then
+            _G.CurrentFPS = frames
+            frames = 0
+            lastUpdate = now
+            pcall(function()
+                local stats = game:GetService("Stats")
+                local net = stats:FindFirstChild("Network")
+                if net then
+                    local serverStats = net:FindFirstChild("ServerStatsItem")
+                    if serverStats and serverStats:FindFirstChild("Data Ping") then
+                        _G.CurrentPing = serverStats["Data Ping"]:GetValue()
+                        return
+                    end
+                end
+              
+                if Players.LocalPlayer and type(Players.LocalPlayer.GetNetworkPing) == "function" then
+                    _G.CurrentPing = Players.LocalPlayer:GetNetworkPing() * 1000
+                end
+            end)
+        end
+    end)
+end)
+
+local function detectSlowNetOrWeakDevice()
+    local isWeakDevice = (_G.CurrentFPS < 15)
+    local isSlowNetwork = (_G.CurrentPing > 300)
+    return (isWeakDevice or isSlowNetwork), _G.CurrentFPS, _G.CurrentPing
+end
+
+local function enableLowMode(reason)
+    if _G.LowModeEnabled then return end
+    _G.LowModeEnabled = true
+    getgenv().LowGpu = true 
+          
+    pcall(function() Notify("Tối ưu (Auto)", "Phát hiện: "..tostring(reason)..".\nBật Low Mode để giảm tải.") end)
+    
+    task.spawn(function()
+        pcall(function()
+            if pcall(function() return settings() end) and pcall(function() return settings().Rendering end) then
+                pcall(function() settings().Rendering.QualityLevel = 1 end)
+            end
+            
+            pcall(function() Lighting.GlobalShadows = false end)
+            pcall(function() Lighting.FogEnd = 9e9 end)
+            
+            pcall(function()
+                if LoadingGui and LoadingGui.Parent then
+                    local ub = LoadingGui:FindFirstChild("UniverseBackground", true)
+                    if ub and ub:IsA("ImageLabel") then ub.ImageTransparency = 1 end
+                end
+            end)
+            
+            if CurrentMusic then
+                 pcall(function() 
+                    if CurrentMusic.Stop then CurrentMusic:Stop() end
+                    if CurrentMusic.Destroy then CurrentMusic:Destroy() end
+                    CurrentMusic = nil      
+                end)
+            end
+        end)
+    end)
+end
+
+local function safeLoadSmart(name, url, preFn)
+    if type(preFn) == "function" then
+        pcall(preFn)
+    end
+    
+    local executableScript = 'loadstring(game:HttpGet("' .. url .. '"))()'
+    
+    if getgenv().CopyScriptMode then
+        if getgenv().CopyScriptCount >= 3 then
+            pcall(function() Notify(name, "❌ Đã hết lượt copy (Tối đa 3 lần)!") end)
+            return false
+        end
+        
+        local ok = pcall(function()
+            if setclipboard then setclipboard(executableScript) end
+        end)
+        
+        if ok then
+            getgenv().CopyScriptCount = getgenv().CopyScriptCount + 1
+            pcall(function() Notify(name, "✅ Đã copy script vào clipboard! (" .. getgenv().CopyScriptCount .. "/3)") end)
+        else
+            pcall(function() Notify(name, "❌ Executor không hỗ trợ copy!") end)
+        end
+        return true
+    end
+    
+    -- [ĐÃ XÓA PHẦN RETURN NIL KHI Ở LOW MODE/MẠNG YẾU]
+    local slowDetected, avgFps, ping = detectSlowNetOrWeakDevice()
+          
+    if slowDetected then
+        local reason = ("FPS=%d, PING=%s"):format(math.floor(avgFps or 0), ping and tostring(math.floor(ping)) or "N/A")
+        enableLowMode(reason)
+        -- Script vẫn sẽ tiếp tục load bình thường ở bên dưới thay vì dừng lại
+    end
+    
+    if type(safeLoad) == "function" then
+        return safeLoad(name, url) 
+    else
+        pcall(function() Notify(name, "Đang load script...") end)
+        local ok2, result = pcall(function()
+            local code = game:HttpGet(url, true)
+            if code == "404: Not Found" or code == "Not Found" or string.find(code, "404 Not Found") then
+                return "DEAD_SCRIPT"
+            end
+            local fn = loadstring(code)
+            if fn then 
+                fn() 
+                return "SUCCESS"
+            else
+                return "SYNTAX_ERROR"
+            end
+        end) 
+            
+        if not ok2 then
+            if tostring(result):find("404") or tostring(result):find("Not Found") then
+                 pcall(function() Notify(name, "❌ Script này đã bị xóa bởi tác giả!") end)
+            else
+                pcall(function() Notify(name, "Load thất bại: "..tostring(result)) end)
+             end
+            return nil
+        elseif result == "DEAD_SCRIPT" then
+            pcall(function() Notify(name, "❌ Script này đã bị xóa bởi tác giả!") end)
+            return nil
+        end
+        pcall(function() Notify(name, "Hoàn thành load script!") end)
+        return true
+    end
+end
+
+task.spawn(function()
+    task.wait(2)
+    local slowDetected, avgFps, ping = detectSlowNetOrWeakDevice()
+    if slowDetected or (avgFps and avgFps < 15) or (ping and ping > 400) then
+        enableLowMode("Auto-check (FPS="..math.floor(avgFps or 0)..", PING="..(ping and tostring(math.floor(ping)) or "N/A")..")")   
+    end
+end)
+-- ===== TABS & BUTTONS ===== 
+if isJJS then
+    local TabJJS = Window:CreateTab("JJS Menu", 88421894421545)
+    TabJJS:CreateSection("📌 Jujutsu Shenanigans")
+    TabJJS:CreateButton({ Name = "  TBO Script (JJS)", Callback = function()
+        safeLoadSmart("TBO HUB", "https://raw.githubusercontent.com/cool5013/TBO/main/TBOscript")
+    end })
+    TabJJS:CreateButton({ Name = "Combat Gui", Callback = function()
+        safeLoadSmart("Combat Gui", "https://api.luarmor.net/files/v3/loaders/34824c86db1eba5e5e39c7c2d6d7fdfe.lua")
+    end })
+    TabJJS:CreateButton({ Name = "Script Uppercut And Downslam (JJS)", Callback = function()
+        safeLoadSmart("Uppercut And Downslam", "https://raw.githubusercontent.com/ggab2351-stack/Jjs/refs/heads/main/Uppercutanddownslam")
+    end })
+    TabJJS:CreateButton({ Name = "Script Black Flash (JJS)", Callback = function()
+        safeLoadSmart("Black Flash", "https://raw.githubusercontent.com/ggab2351-stack/Jjs/refs/heads/main/obfuscated_script-1770002780541.lua.txt")
+    end })
+    TabJJS:CreateButton({ Name = "Script Naoya (JJS)", Callback = function()
+        safeLoadSmart("Naoya", "https://raw.githubusercontent.com/ggab2351-stack/Jjs/refs/heads/main/obfuscated_script-1770002780541.lua.txt")
+    end })
+end
+
+if isTSB then   
+    local TabTSB = Window:CreateTab("TSB Menu", 92607990285302)
+    TabTSB:CreateSection("📌 The Strongest Battlegrounds")
+    TabTSB:CreateButton({ Name = "  Script CarbonHub", Callback = function()
+        safeLoadSmart("CarbonHub", "https://raw.githubusercontent.com/CStudios-Dev/csLoader.lua/main/CSLoader.lua")
+    end })
+    TabTSB:CreateButton({ Name = "MerebennieHUB", Callback = function()
+        safeLoadSmart("MerebennieHUB", "https://raw.githubusercontent.com/67HubDev/all/refs/heads/main/MerebennieHUB.txt")
+    end })
+    TabTSB:CreateButton({ Name = "VexonHub", Callback = function()
+        safeLoadSmart("VexonHub", "https://raw.githubusercontent.com/DiosDi/VexonHub/refs/heads/main/VexonHub")
+    end })
+    TabTSB:CreateButton({ Name = "Trash Can", Callback = function()
+        safeLoadSmart("Trash Can", "https://raw.githubusercontent.com/yes1nt/yes/refs/heads/main/Trashcan%20Man")
+    end })
+    TabTSB:CreateButton({ Name = "AutoFarm TrashCan", Callback = function()
+        safeLoadSmart("AutoFarm TrashCan", "https://raw.githubusercontent.com/Cyborg883/AutoFarmKills/refs/heads/main/TrashCan")
+    end })
+    TabTSB:CreateButton({ Name = "AimLock & Block", Callback = function()
+        safeLoadSmart("AimLock & Block", "https://raw.githubusercontent.com/Cyborg883/CombatGUI/refs/heads/main/TSBCombatGUI")
+    end })
+    TabTSB:CreateButton({ Name = "XDevHubBeta", Callback = function()
+        safeLoadSmart("XDevHubBeta", "https://raw.githubusercontent.com/Emerson2-creator/Scripts-Roblox/refs/heads/main/XDevHubBeta.lua")
+    end })
+    
+    local TabTech = Window:CreateTab("Tech", 17313313998)
+    TabTech:CreateSection("📌 Tùy chỉnh Tech (TSB)")
+    TabTech:CreateButton({ Name = " Supa Tech V3", Callback = function()
+        safeLoadSmart("Supa Tech V3", "https://api.getpolsec.com/scripts/hosted/ea0b7cbd8c395e01ec38271794b2559808d26501bd6e6e30c48660759a7db7b3.lua")
+    end })
+    TabTech:CreateButton({ Name = "Garou Tech", Callback = function()
+        safeLoadSmart("Garou Tech", "https://raw.githubusercontent.com/Cyborg883/GarouTechs/refs/heads/main/Protected_9831634675356265.lua")
+    end })   
+    TabTech:CreateButton({ Name = "Backdash Cancel", Callback = function()
+        safeLoadSmart("Backdash Cancel", "https://api.getpolsec.com/scripts/hosted/0b57119c46c0267e6791f789ace2ffac7b752a63224d86a0b6f95d68aec099ac.lua")
+    end })
+    TabTech:CreateButton({ Name = "BOOMY LoopDash V2", Callback = function()
+        safeLoadSmart("BOOMY LoopDash V2", "https://api.getpolsec.com/scripts/hosted/84e2bd29cccc0f5302267e4dc952cff6816db4af36416cbd477daaa26d60863d.lua")
+    end })
+    TabTech:CreateButton({ Name = "Instant Twisted Old", Callback = function()
+        safeLoadSmart("Instant Twisted Old", "https://api.getpolsec.com/scripts/hosted/1e18721250d10562953e57cd75a2e7e4151b7d20e876930c0f394056d253b3fd.lua")
+    end })
+    TabTech:CreateButton({ Name = "Side Dash assist V3", Callback = function()
+        safeLoadSmart("Side Dash assist V3", "https://api.getpolsec.com/scripts/hosted/23bcf4264b586dc93b16a9b054eddae259938b7421ac5096353079b2e9d74e24.lua")
+    end })
+    TabTech:CreateButton({ Name = "Best Oreo Script", Callback = function()
+        safeLoadSmart("Best Oreo Script", "https://pandadevelopment.net/virtual/file/e6419ee43f9e7f1f")
+    end })
+    TabTech:CreateButton({ Name = "M1 Reset", Callback = function()
+        safeLoadSmart("M1 Reset", "https://raw.githubusercontent.com/Slaphello/M1-Reset-And-Emote-Dash-TSB-OLD-/refs/heads/main/M1R%26ED%20TSB")
+    end })
+    
+    local TabNhanVat = Window:CreateTab("Nhân Vật", 102043684127251)    
+    TabNhanVat:CreateSection("📌 Nhân vật (TSB)")
+    TabNhanVat:CreateButton({ Name = "  Perfect Gojo", Callback = function()
+        safeLoad("Perfect Gojo", "https://rawscripts.net/raw/KJ-The-Strongest-Battlegrounds-battleground-gojo-script-saitama-to-gojo-26980")
+    end })
+    TabNhanVat:CreateButton({ Name = "Sc!Sans", Callback = function()
+        safeLoad("Sc!Sans", "https://pastefy.app/SiVOcaqi/raw")
+    end })
+    TabNhanVat:CreateButton({ Name = "Chara (Saitama)", Callback = function()
+        safeLoad("Chara", "https://pastefy.app/gFRaeMGz/raw")
+    end })
+    TabNhanVat:CreateButton({ Name = "Akuma", Callback = function()
+        safeLoad("Akuma", "https://pastefy.app/Np8P87lk/raw?part=AKUMA.lua")
+    end })
+    TabNhanVat:CreateButton({ Name = "Garou Mastery", Callback = function()
+        safeLoad("Garou Mastery", "https://pastefy.app/CyAlemKo/raw")
+    end })
+    TabNhanVat:CreateButton({ Name = "Igris", Callback = function()
+        safeLoad("Igris", "https://raw.githubusercontent.com/sparksnaps/igris/refs/heads/main/Lua")
+    end })
+    TabNhanVat:CreateButton({ Name = "Shadow", Callback = function()
+        safeLoad("Shadow", "https://raw.githubusercontent.com/sparksnaps/Lord-Shadow-Beta/refs/heads/main/Lua")
+    end }) 
+    TabNhanVat:CreateButton({ Name = "Bihah", Callback = function()
+        safeLoad("Bihah", "https://pastefy.app/RuUEXVUS/raw")
+    end })
+    TabNhanVat:CreateButton({ Name = "Sans", Callback = function()
+        safeLoad("Sans", "https://pastefy.app/EU9b4abX/raw")
+    end })
+end
+
+-- [TAB BLOX FRUIT]
+if isBloxFruit then
+    local TabBF = Window:CreateTab("Blox Fruit", 15370410333)
+    TabBF:CreateSection("📌 Chức Năng")
+    TabBF:CreateInput({
+        Name = "  Tìm kiếm Script nhanh",
+        PlaceholderText = "Nhập tên Hub (VD: Redz, Hoho...)",
+        RemoveTextAfterFocusLost = false,
+        Callback = function(Text)
+            local filter = string.lower(Text)
+            pcall(function()               
+                local function getRayfieldUI()
+                    if gethui then local ui = gethui():FindFirstChild("Rayfield"); if ui then return ui end end
+                    local core = game:GetService("CoreGui"):FindFirstChild("Rayfield"); if core then return core end
+                    local pl = game:GetService("Players").LocalPlayer
+                    if pl then local pg = pl:FindFirstChild("PlayerGui"); if pg then return pg:FindFirstChild("Rayfield") end end
+                    return nil
+                end
+                
+                local ui = getRayfieldUI()
+                if ui then    
+                    local elementsFolder = ui:FindFirstChild("Elements", true)
+                    if elementsFolder then
+                        local bfTab = elementsFolder:FindFirstChild("Blox Fruit")    
+                        if bfTab then
+                            for _, element in pairs(bfTab:GetChildren()) do       
+                                if element:IsA("Frame") then
+                                    local titleLbl = element:FindFirstChild("Title", true) or element:FindFirstChild("TextLabel", true)                            
+                                    if titleLbl and titleLbl:IsA("TextLabel") then
+                                        local txt = string.lower(titleLbl.Text)
+                                        if not string.find(txt, "tìm kiếm script nhanh", 1, true)       
+                                            and not string.find(txt, "nếu script lỗi", 1, true)
+                                            and not string.find(txt, "blox fruits", 1, true) then                                 
+                                            if filter == "" or string.find(txt, filter, 1, true) then                   
+                                                element.Visible = true
+                                            else                       
+                                                element.Visible = false
+                                            end                           
+                                        end                                     
+                                    end        
+                                end                
+                            end                         
+                        end                     
+                    end         
+                end             
+            end)         
+        end  
+    })
+
+    getgenv().CopyScriptMode = false
+    TabBF:CreateToggle({
+        Name = "   Chế độ: Copy Script (Tắt = Chạy trực tiếp, Phần Auto cũng sẽ copy)",
+        CurrentValue = false,
+        Callback = function(Value)
+            getgenv().CopyScriptMode = Value
+            if Value then
+                local count = getgenv().CopyScriptCount or 0
+                if count >= 3 then
+                    pcall(function() Notify("Cài đặt", " Đã BẬT nhưng bạn đã HẾT lượt Copy!") end)
+                else
+                    pcall(function() Notify("Cài đặt", " Đã BẬT: Bấm nút để Copy (" .. (3 - count) .. " lượt còn lại)") end)
+                end
+                        else
+                pcall(function() Notify("Cài đặt", " Đã TẮT: Bấm nút để Chạy trực tiếp") end)
+            end
+        end
+    })
+TabBF:CreateSection("[🔥] Hot")
+    TabBF:CreateButton({
+        Name = "Hermanos Hub-PVP",
+        Callback = function()
+            getgenv().script_mode = "PVP" -- PVP, FARM
+            safeLoad("Hermanos Hub", "https://raw.githubusercontent.com/hermanos-dev/hermanos-hub/refs/heads/main/Loader.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "Hermanos Hub-Farm",
+        Callback = function()
+            getgenv().script_mode = "FARM" -- PVP, FARM
+            safeLoad("Hermanos Hub", "https://raw.githubusercontent.com/hermanos-dev/hermanos-hub/refs/heads/main/Loader.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "Maru by Longhihi",
+        Callback = function()
+            safeLoad("Maru by Longhihi", "https://raw.githubusercontent.com/longhihilonghihi-hub/MaruHubV1/refs/heads/main/MainV1.Lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "Red🇻🇳HUB-LongHiHi",
+        Callback = function()
+            safeLoad("Red  HUB", "https://raw.githubusercontent.com/longhihilonghihi-hub/MainV1/refs/heads/main/RedVietNam.Lua")
+        end
+    })
+    
+    
+    TabBF:CreateButton({
+        Name = "DatThgV5",
+        Callback = function()
+            safeLoad("DatThgV5", "https://github.com/LuaCrack/DatThg/raw/refs/heads/main/DatThgV5English")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "ADZ Hub",
+        Callback = function()
+            safeLoad("ADZ Hub", "https://raw.githubusercontent.com/AnDepZaiHub/AnDepZaiHubBeta/refs/heads/main/AnDepZaiHubBeta.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "PMT Hub",
+        Callback = function()
+            safeLoad("PMT Hub", "https://raw.githubusercontent.com/trieu1082/Trieu/main/trieucanallthkngu")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "Bear Hub",
+        Callback = function()
+            safeLoad("Bear Hub", "https://raw.githubusercontent.com/Huylovemy/Bearhudz/refs/heads/main/Bearhud.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "Teddy Hub Main",
+        Callback = function()      
+            safeLoad("Teddy Hub Main", "https://api.luarmor.net/files/v4/loaders/e86ed284a22672d29e906214e7bbf8b9.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "High hub (Key:KUPAL-SHOP)",
+        Callback = function()
+            safeLoad("High hub", "https://raw.githubusercontent.com/Jadelly/bloxfruit/refs/heads/main/HighLoader")
+        end
+    })
+        TabBF:CreateButton({
+        Name = "Night Hop Sever Fruits",
+        Callback = function()
+            safeLoad("Night Hop Sever Fruits", "https://api.luarmor.net/files/v4/loaders/01f0b1186a4c799992e4fa2a74a5f3d0.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "Tele Fruits",
+        Callback = function()     
+            safeLoad("Tele Fruits", "https://raw.githubusercontent.com/Dev-GravityHub/BloxFruit/refs/heads/main/FindFruit.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "Redz-VTD ROBLOX ",
+        Callback = function()
+            safeLoad("Redz-VTD ROBLOX ", "https://raw.githubusercontent.com/vtdmc12/Tungdjdj/refs/heads/main/9821756751444348.lua.txt")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "Redz Hub-PlockScripts",
+        Callback = function()
+            safeLoad("Redz Hub", "https://raw.githubusercontent.com/PlockScripts/newredz/refs/heads/main/Remake-version.luau")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "TRon Void Hub",
+        Callback = function()
+            safeLoad("TRon Void Hub", "https://raw.githubusercontent.com/TRon-Void-Devs/TRon-Void-Hub-R6.1/refs/heads/main/script.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "Gravity Hub",
+        Callback = function()
+            safeLoad("Gravity Hub", "https://raw.githubusercontent.com/Dev-GravityHub/BloxFruit/refs/heads/main/Main.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "THG HUB-HOHO",
+        Callback = function()
+            safeLoad("THG HUB", "https://raw.githubusercontent.com/acsu123/HohoV2/refs/heads/main/BloxFruit/Custom/ThgHub.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "PhucRedZ Hub",
+        Callback = function()
+            safeLoad("PhucRedZ Hub", "https://raw.githubusercontent.com/phucdzaivl/phucdepzai/refs/heads/main/redzhub.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "Bamia Hub",
+        Callback = function()
+            safeLoad("Bamia Hub", "https://raw.githubusercontent.com/Graihub/Loader-bamiahub/refs/heads/main/bamia")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "Bacon Hub",
+        Callback = function()
+            safeLoad("Bacon Hub", "https://raw.githubusercontent.com/vinh129150/hack/refs/heads/main/BaconHub.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "Catstar Hub-Farm",
+        Callback = function()
+            safeLoad("Catstar Hub", "https://catt-star-autofarm.vercel.app/api/autofarm")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "Catstar Hub-AimBot",
+        Callback = function()
+            safeLoad("Catstar Hub", "https://catt-star-aimbot-delta.vercel.app/api/aimbot")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "NightMystic",
+        Callback = function()
+            safeLoad("NightMystic", "https://raw.githubusercontent.com/Dev-NightMystic/Night-Mystic-/refs/heads/main/NightMystic")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "OkHub",
+        Callback = function()
+            safeLoad("OkHub", "https://raw.githubusercontent.com/fakekuri/Okhubhere/refs/heads/main/MainBloxFruit.lua")
+        end
+    })
+        TabBF:CreateButton({
+        Name = "Hdanh (Banana)",
+        Callback = function()
+            safeLoad("Hdanh (Banana)", "https://raw.githubusercontent.com/67HubDev/all/refs/heads/main/Hdanh.txt")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "Ohofo Banana",
+        Callback = function()
+getgenv().Key = "XyZpQrStUvWxYzAbCdEfGhIjKl"
+            safeLoad("Ohofo Banana", "https://raw.githubusercontent.com/Ohofo2279/Premium/refs/heads/main/BF-BananaCat.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "Rubu Hub V6",
+        Callback = function()
+            safeLoad("Rubu Hub V6", "https://raw.githubusercontent.com/Teddyseetink/RUBU/refs/heads/main/RUBUV6.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "MidnightX",
+        Callback = function()
+            safeLoad("MidnightX", "https://raw.githubusercontent.com/Ohofo2279/Midnight/refs/heads/main/MidnightX-BloxFruits.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "Thunder Hub",
+        Callback = function()
+            safeLoad("Thunder Hub", "https://raw.githubusercontent.com/Jadelly/bloxfruit/refs/heads/main/Thunder")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "Bostur Hub",
+        Callback = function()
+            safeLoad("Bostur Hub", "https://raw.githubusercontent.com/thihaccff-alt/H-hhhaa/refs/heads/main/MainBosturUiRedzHub-obfuscated.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "Dragon Hub",
+        Callback = function()
+            safeLoad("Dragon Hub", "https://raw.githubusercontent.com/dragonhubdev/dragonwitheveryone/refs/heads/main/Main-BF.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "NatAov Hub",
+        Callback = function()
+            safeLoad("NatAov Hub", "https://raw.githubusercontent.com/Dev-AnhTuansitink/MainLoaderScript/refs/heads/main/ILoveH.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "HaoModHub",
+        Callback = function()
+            safeLoad("HaoModHub", "https://raw.githubusercontent.com/TranGiaHao-source/HaoModHub/refs/heads/main/HUB_VIP_BY_HAO")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "BlueX Hub",
+        Callback = function()
+            safeLoad("BlueX Hub", "https://raw.githubusercontent.com/Dev-BlueX/BlueX-Hub/refs/heads/main/Main.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "QuantumOnyx",
+        Callback = function()
+            safeLoad("QuantumOnyx", "https://raw.githubusercontent.com/flazhy/QuantumOnyx/refs/heads/main/QuantumOnyx.lua")
+        end
+    })
+    
+    TabBF:CreateSection("[🌱] Normal")
+ 
+    TabBF:CreateButton({
+        Name = "Xeno Hub",
+        Callback = function()
+            safeLoad("Xeno Hub", "https://api.luarmor.net/files/v4/loaders/245375592509cc0bcb3526982431ab18.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "RedZ Setting 2026",
+        Callback = function()
+            safeLoad("RedZ Setting 2026", "https://pastefy.app/AjS0TLCt/raw")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "6_7 HUB (Bloxfruits)",
+        Callback = function()
+            safeLoad("6_7 Hub", "https://raw.githubusercontent.com/67HubDev/all/refs/heads/main/Script.vn.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "DarknessHub",
+        Callback = function()
+            safeLoad("DarknessHub", "https://raw.githubusercontent.com/jayetcixgaming2010/Drakness-Script/refs/heads/main/DarknessHubMainBf.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "MonsterHubEN",
+        Callback = function()
+            safeLoad("MonsterHubEN", "https://raw.githubusercontent.com/giahuy2511-coder/MonsterHub/refs/heads/main/MonsterHubEN")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "Rise Hub",
+        Callback = function()
+            getgenv().Team = "Pirates" --Marines / Pirates
+            safeLoad("Rise Hub", "https://raw.githubusercontent.com/asher-realrise/project/refs/heads/main/loadder.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "Meox Hub",
+        Callback = function()
+            safeLoad("Meox Hub", "https://raw.githubusercontent.com/VanHoangIOS/MeoXHub/refs/heads/main/Main.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "TUBO HUB",
+        Callback = function()
+            safeLoad("TUBO HUB", "https://raw.githubusercontent.com/TurboLite/Script/refs/heads/main/MainV2.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "DarkSoul Hub",
+        Callback = function()
+            safeLoad("DarkSoul Hub", "https://api.jnkie.com/api/v1/luascripts/public/30a80695384ce9f2c29abb8cbea83e883dd4210a3921ad7afaa91d20c339799e/download")
+        end
+    })
+    
+   TabBF:CreateButton({
+        Name = "Relz Hub",
+        Callback = function()
+            safeLoad("Relz Hub", "https://relzhub.farrelghibran.com/loader.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "Heart Hub",
+        Callback = function()
+            safeLoad("Heart Hub", "https://raw.githubusercontent.com/Jadelly/bloxfruit/refs/heads/main/HeartHub")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "DarkXHub",
+        Callback = function()
+            safeLoad("DarkXHub", "https://raw.githubusercontent.com/trongdeptraihucscript/Trdz-hub/refs/heads/main/DarkXHub.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "NeroHub",
+        Callback = function()
+            safeLoad("NeroHub", "https://raw.githubusercontent.com/NeroHubClub/AutoMythicFruitFinder/refs/heads/main/NeroHubFruitFinder")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "VxezeHub",
+        Callback = function()
+            safeLoad("VxezeHub", "https://raw.githubusercontent.com/Dex-Bear/Vxezehub/refs/heads/main/VxezeHubMain")
+        end
+    })
+    
+TabBF:CreateButton({
+        Name = "RaitoHub",
+        Callback = function()
+            safeLoad("RaitoHub", "https://raw.githubusercontent.com/Efe0626/RaitoHub/main/Script")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "Speed X Hub",
+        Callback = function()
+            safeLoad("Speed X Hub", "https://raw.githubusercontent.com/AhmadV99/Speed-Hub-X/main/Speed%20Hub%20X.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "ThanHub",
+        Callback = function()
+            safeLoad("ThanHub", "https://raw.githubusercontent.com/thantzy/thanhub/refs/heads/main/thanv1")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "CokkaHub",
+        Callback = function()
+            safeLoad("CokkaHub", "https://raw.githubusercontent.com/UserDevEthical/Loadstring/main/CokkaHub.lua")
+        end
+    })
+    
+TabBF:CreateButton({
+        Name = "TuanAnhIOS",
+        Callback = function()
+            safeLoad("TuanAnhIOS", "https://raw.githubusercontent.com/AnhTuanDzai-Hub/TuanAnhIOS/refs/heads/main/TuanAnhIOS-Main.Lua")
+        end
+    })
+    
+    TabBF:CreateButton({
+        Name = "Zenith Hub",
+        Callback = function()
+            safeLoad("Zenith Hub", "https://raw.githubusercontent.com/LookP/Roblox/refs/heads/main/ZenithHUB%20ZC%20Rivals")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "Blox Fruit-IDK",
+        Callback = function()
+            safeLoad("Blox Fruit-IDK", "https://api.luarmor.net/files/v3/loaders/80a557829defe42d381746809857e884.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "Orange Hub",
+        Callback = function()
+            safeLoad("Orange Hub", "https://raw.githubusercontent.com/HieuDepTrai-Z/Dev_Orange/refs/heads/main/OrangeHub.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "Aurora",
+        Callback = function()
+            safeLoad("Aurora", "https://raw.githubusercontent.com/Jadelly261/BloxFruits/main/Aurora")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "Alchemyhub",
+        Callback = function()
+            safeLoad("Alchemyhub", "https://scripts.alchemyhub.xyz")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "BF-Idk",
+        Callback = function()
+            safeLoad("Idk", "https://api.luarmor.net/files/v3/loaders/513ccdb3ae8a61d4d7698fc337e5256d.lua")
+        end
+    }) 
+    TabBF:CreateButton({
+        Name = "Zyn Hub",
+        Callback = function()
+            safeLoad("Zyn Hub", "https://raw.githubusercontent.com/jaiasof/Zyn-Hub/refs/heads/main/Zyn%20Loader")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "Zynex Hub",
+        Callback = function()
+            safeLoad("Zynex hub", "https://raw.githubusercontent.com/Hirokai-Script-make/Zynexhubbloxfruit/refs/heads/main/ZynexHub-BloxFruit-redz.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "Abacaxi Hub",
+        Callback = function()
+            safeLoad("Abacaxi Hub", "https://raw.githubusercontent.com/real33ms/BloxFruits/refs/heads/main/AbacaxiHubOfc.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "Syntrax Hub V2",
+        Callback = function()
+            safeLoad("Syntrax Hub", "https://raw.githubusercontent.com/DevHub-roblox/script-SYNTRAX-Hub/refs/heads/main/Game/Bloxfruit/SYNTRAXHub/v2/main.lua.txt")
+        end
+    })
+    
+TabBF:CreateSection("[🗝️] Key")
+TabBF:CreateButton({
+        Name = "Xeter V4",
+        Callback = function()
+            getgenv().Version = "V4"
+            getgenv().Team = "Marines"
+            safeLoad("Xeter V4", "https://raw.githubusercontent.com/TlDinhKhoi/Xeter/refs/heads/main/Main.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "HoHo Hub",
+        Callback = function()
+            safeLoad("HoHo Hub", "https://raw.githubusercontent.com/acsu123/HOHO_H/main/Loading_UI")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "Omg Hub",
+        Callback = function()
+            safeLoad("Omg Hub", "https://raw.githubusercontent.com/Omgshit/Scripts/main/MainLoader.lua")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "Teddy Hub Hop",
+        Callback = function()
+            safeLoad("Teddy Hub", "https://raw.githubusercontent.com/Teddyseetink/Haidepzai/refs/heads/main/TEDDYHUB-FREEMIUM")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "Night Hub",
+        Callback = function()
+            safeLoad("Night Hub", "https://raw.githubusercontent.com/WhiteX1208/Scripts/refs/heads/main/HopScript.luau")
+        end
+    })
+    
+    -- Tab Linh Tinh (Auto Farm)
+    local TabLT = Window:CreateTab("Auto Farm", 7508442970)
+    TabLT:CreateSection("📌 Farm Bounty")
+    TabLT:CreateButton({
+        Name = "Vexeze Hub (Farm Bounty)",
+        Callback = function()
+            repeat task.wait() until game:IsLoaded()
+            getgenv().LoadUi = true
+            getgenv().LowGpu = false -- Fps Boost
+            getgenv().Premium = false -- if false for free but true for premium and need key
+            getgenv().Key = "" -- Your Key
+            getgenv().Team = "Pirates" -- Marines
+            getgenv().Mode = "M1 Fruit" -- Normal But Config In Discord
+            getgenv().Studio = {
+                ["Player Setting"] = {
+                    ["Camera Lock"] = false,
+                    ["Custom Pos Y"] = {["Enabled"] = true, ["Pos Y"] = 5000},
+                    ["Health Setting"] = {40, 50}, -- 40-50% Heath
+                    ["Set Bounty"] = {["Min"] = 0, ["Max"] = 30000000},
+                    ["Spam Dash"] = true,
+                    ["Your Fruit"] = "" -- Your Fruit Have M1
+                },
+                ["Target Setting"] = {
+                    ["Destroy Ken Target"] = false,
+                    ["Hunter Method"] = {
+                        ["Dogde Skill Target"] = true,
+                        ["Use Move Predict"] = true
+                    }
+                }
+            }
+            getgenv().Webhook = {
+                ["Enable"] = false,
+                ["Url"] = ""
+            }
+            getgenv().HunterGui = {
+                ["Hide_Gui"] = false,
+                ["Setting"] = {["Gui"] = {}}
+            }
+            safeLoad("Vexeze Hub", "https://raw.githubusercontent.com/Dex-Bear/VxezeHubLoader/refs/heads/main/BF-HunterBounty.lua")
+        end
+    })
+
+    TabLT:CreateButton({
+        Name = "Night Hub (Farm Bounty)",
+        Callback = function()
+            getgenv().Config = {
+                Team = "Pirates",
+                HuntConfig = {
+                    ["Earned Notification Enabled"] = true,
+                    ["Farm Delay"] = 0.22, -- 0.15 Fast | 0.22 Fast | 0.35 Medium
+                    ["Webhook"] = {
+                        Enabled = false,
+                        Url = ""
+                    }
+                }
+            }
+            safeLoad("Night Hub", "https://api.luarmor.net/files/v4/loaders/2ffcdb62773f587bfb9eb0d52bb35b0c.lua")
+        end
+    })
+
+    TabLT:CreateButton({
+        Name = "Dragonhub [Auto Farm Bounty] ",
+        Callback = function()
+            repeat task.wait() until game:IsLoaded() and game.Players.LocalPlayer
+            getgenv().Setting = {
+                ["Team"] = "Pirates",
+                ["Auto Click"] = true,
+                ["Delay Click"] = 0.3,
+                ["EnableWeapon"] = {
+                    ["Fruit"] = false,
+                    ["Melee"] = true,
+                    ["Sword"] = true,
+                    ["Gun"] = false
+                },
+                ["Melee"] = {
+                    ["Z"] = {["Enable"] = true, ["HoldTime"] = 0.5},
+                    ["X"] = {["Enable"] = true, ["HoldTime"] = 0.6},
+                    ["C"] = {["Enable"] = true, ["HoldTime"] = 0.5},
+                    ["ChangeDelay"] = 3
+                },
+                ["Sword"] = {
+                    ["Z"] = {["Enable"] = true, ["HoldTime"] = 1.5},
+                    ["X"] = {["Enable"] = true, ["HoldTime"] = 0.6},
+                    ["ChangeDelay"] = 2
+                },
+                ["Gun"] = {
+                    ["Z"] = {["Enable"] = true, ["HoldTime"] = 0.1},
+                    ["X"] = {["Enable"] = true, ["HoldTime"] = 0.1},
+                    ["ChangeDelay"] = 1,
+                    ["GunMode"] = false
+                },
+                ["Fruit"] = {
+                    ["Z"] = {["Enable"] = true, ["HoldTime"] = 0.1},
+                    ["X"] = {["Enable"] = true, ["HoldTime"] = 0.1},
+                    ["C"] = {["Enable"] = true, ["HoldTime"] = 0.1},
+                    ["V"] = {["Enable"] = false, ["HoldTime"] = 0.1},
+                    ["F"] = {["Enable"] = true, ["HoldTime"] = 0.1},
+                    ["ChangeDelay"] = 1
+                },
+                ["LockBounty"] = {
+                    ["Enable"] = false,
+                    ["Min"] = 0,
+                    ["Max"] = 30000000
+                },
+                ["Skip"] = {
+                    ["Fruit"] = true,
+                    ["FruitSkip"] = {"Buddha","Tiger","T-Rex"},
+                    ["SafeZone"] = true,
+                    ["NoHaki"] = true,
+                    ["NoPvP"] = true
+                },
+                ["SafeHealth"] = {
+                    ["Health"] = 4700,
+                    ["Mask"] = false,
+                    ["MaskType"] = "Mask",
+                    ["RaceV4"] = false
+                },
+                ["Setting"] = {
+                    ["UseRaceV3"] = true,
+                    ["UseRaceV4"] = true,
+                    ["SafeHealth"] = true,
+                    ["Skip V4 Race"] = true,
+                    ["Health"] = 4700,
+                    ["FPSBoots"] = true,
+                    ["AutoServerHop"] = true,
+                    ["CheckCombatBeforeHop"] = true,
+                    ["Fast Attack"] = true
+                },
+                ["Select Region"] = {
+                    ["Enabled"] = true,
+                    ["Region"] = {
+                        ["Singapore"] = true,
+                        ["United States"] = false,
+                        ["Netherlands"] = false,
+                        ["Germany"] = false,
+                        ["India"] = false,
+                        ["Australia"] = false
+                    }
+                },
+                ["Webhook"] = {
+                    ["Enabled"] = true,
+                    ["Url"] = "your Url webhook"
+                },
+                ["AimBot"] = {
+                    ["Enable"] = true,
+                    ["AimCamera"] = {["Enable"] = true, ["MaxDistance"] = 300},
+                    ["LockAim"] = {["Enable"] = true}
+                }
+            }
+            safeLoad("Vexeze Hub", "https://raw.githubusercontent.com/dragonhubdev/dragonwitheveryone/refs/heads/main/AutoBounty.lua")
+        end
+    })
+    TabLT:CreateButton({
+        Name = "Dragon AutoBounty",
+        Callback = function()
+getgenv().Config_Dragon = {
+ ["Team"] = "Pirates",
+
+ ["Race"] = {
+ ["V3"] = true,
+ ["V4"] = true
+ },
+
+ ["Weapons"] = {
+ ["Fruit"] = {
+ ["Enabled"] = true,
+ ["ChangeDelay"] = 0.1,
+
+ ["X"] = { ["Enabled"] = false, ["HoldTime"] = 0 },
+ ["Z"] = { ["Enabled"] = false, ["HoldTime"] = 0 },
+ ["C"] = { ["Enabled"] = false, ["HoldTime"] = 0 },
+ ["V"] = { ["Enabled"] = false, ["HoldTime"] = 0 }
+ }
+ },
+
+ ["Misc"] = {
+ ["Fast Attack"] = true,
+
+ ["Webhook"] = {
+ ["Enabled"] = true,
+ ["Url"] = "",
+ ["Ping"] = "<@>",
+ ["Delay"] = 40
+ },
+
+ ["MaxTargetDistance"] = 50000
+ },
+
+ ["Skip"] = {
+ ["Fruit"] = true,
+ ["FruitSkip"] = { "Buddha", "Yeti", "Portal" }
+ }
+}
+            safeLoad("Dragon AutoBounty", "https://raw.githubusercontent.com/dragonhubdev/dragonwitheveryone/refs/heads/main/M1AutoBounty")
+        end
+    })
+    TabBF:CreateButton({
+        Name = "SynTrax AutoBounty",
+        Callback = function()
+            getgenv().Setting = {
+        ["Team"] = "Pirates",        
+        ["Chat"] = {},
+        ["Skip Race V4"] = true,        
+        ["Melee"] = {
+            ["Enable"] = true,
+            ["Z"] = {["Enable"] = true, ["HoldTime"] = 0.1},
+            ["X"] = {["Enable"] = true, ["HoldTime"] = 0.1},
+            ["C"] = {["Enable"] = true, ["HoldTime"] = 0.1},
+            ["Delay"] = 1.5
+        },        
+        ["Sword"] = {
+            ["Enable"] = true,
+            ["Z"] = {["Enable"] = true, ["HoldTime"] = 0.1},
+            ["X"] = {["Enable"] = true, ["HoldTime"] = 0.1},
+            ["Delay"] = 1
+        },        
+        ["Gun"] = {
+            ["Enable"] = true,
+            ["Z"] = {["Enable"] = true, ["HoldTime"] = 0.1},
+            ["X"] = {["Enable"] = true, ["HoldTime"] = 0.1},
+            ["Delay"] = 1,
+            ["GunMode"] = false
+        },        
+        ["Fruit"] = {
+            ["Enable"] = true,
+            ["Z"] = {["Enable"] = true, ["HoldTime"] = 0.1},
+            ["X"] = {["Enable"] = true, ["HoldTime"] = 0.1},
+            ["C"] = {["Enable"] = true, ["HoldTime"] = 0.1},
+            ["V"] = {["Enable"] = false, ["HoldTime"] = 0.1},
+            ["F"] = {["Enable"] = true, ["HoldTime"] = 0.1},
+            ["Delay"] = 1
+        },        
+        ["Hunt"] = {
+            ["Min"] = 0,
+            ["Max"] = 30000000
+        },        
+        ["Skip"] = {
+            ["Fruit"] = false,
+            ["FruitList"] = {"Buddha", "Leopard", "T-Rex"},
+            ["SafeZone"] = true,
+            ["NoHaki"] = true,
+            ["NoPvP"] = true
+        },        
+        ["SafeHealth"] = {
+            ["Health"] = 4700,
+            ["Mask"] = false,
+            ["MaskType"] = "Mask",
+            ["RaceV4"] = false
+        },        
+        ["Another"] = {
+            ["V3"] = true,
+            ["V4"] = true,
+            ["CustomHealth"] = true,
+            ["Health"] = 4700,
+            ["WhiteScreen"] = false,
+            ["FPSBoots"] = false,
+            ["AutoServerHop"] = true,
+            ["HopWhenNoBounty"] = true,
+            ["BountyLock"] = false,
+            ["BountyLockAt"] = 30000000,
+            ["ServerHopAfterTime"] = false,
+            ["ServerHopTime"] = 900,
+            ["CheckCombatBeforeHop"] = true,
+            ["MaxPlayersInServer"] = 8
+        },        
+        ["Webhook"] = {
+            ["Enabled"] = false,
+            ["Url"] = ""
+        }
+}
+            safeLoad("SynTrax AutoBounty", "https://raw.githubusercontent.com/DevHub-roblox/script-SYNTRAX-Hub/refs/heads/main/SynTrax-Auto-bounty")
+        end
+    })
+TabLT:CreateSection("📌 Farm Chest")
+    TabLT:CreateButton({
+        Name = "Lone Hub Chest",
+        Callback = function()
+            getgenv().Team = "Pirates" -- Pirates, Marines
+            getgenv().Setting = {
+                ["White Screen"] = false,
+                ["Black Screen"] = false,
+                ["Boost Fps"] = false,
+                ["Lock Fps"] = {
+                    ["Enabled"] = false,
+                    ["Fps"] = 20,
+                },
+                ["Auto Chat"] = {
+                    ["Enabled"] = true,
+                    ["Text"] = "Lonely Hub On Top",
+                    ["Delay"] = 150,
+                },
+            }
+            safeLoad("Lone Hub Chest", "https://raw.githubusercontent.com/LongHip12/LonelyHub/refs/heads/main/LonelyHub-FarmChestBF.lua")
+        end
+    })
+    TabLT:CreateButton({
+        Name = "NaNafarmchest",
+        Callback = function()
+            safeLoad("NaNafarmchest", "https://raw.githubusercontent.com/NaNaTV36/NaNaautochest/refs/heads/main/NaNafarmchest.lua")
+        end
+    })
+	TabLT:CreateSection("📌  KAITUN")
+    TabLT:CreateButton({
+        Name = "3TN Kaitun",
+        Callback = function()
+            getgenv().Config = {
+                Team = "Pirates",
+                Configuration = {
+                    HopWhenIdle = true,
+                    AutoHop = true,
+                    AutoHopDelay = 60 * 60,
+                    FpsBoost = true,
+                    blackscreen = false
+                },
+                Items = {
+                    AutoFullyMelees = true,
+                    Saber = true,
+                    CursedDualKatana = false,
+                    SoulGuitar = false,
+                    RaceV2 = true
+                },
+                Settings = {
+                    StayInSea2UntilHaveDarkFragments = false
+                }
+            }
+            safeLoad("3TN Kaitun", "https://raw.githubusercontent.com/sucvatthieunang/djtme/refs/heads/main/module")
+        end
+    })
+TabLT:CreateButton({
+        Name = "Meox Hub Kaitun",
+        Callback = function()
+        getgenv().Config = {
+    Team = "Pirates",
+    FarmConfig = {
+        ["Out game when done all"] = true,
+        ["Bypass Teleport"] = true,
+        ["Double Quest(RISK)"] = true
+    },
+    Items = {
+        ["Saber"] = true,
+        ["Pole (1st form)"] = true,
+        ["Skull Guitar"] = true,
+        ["Cursed Dual Katana"] = true,
+        ["Godhuman"] = true
+    },
+    Webhook = {
+        ["Enabled"] = false,
+        ["Url"] = ""
+    }
+}
+            safeLoad("Meox Hub Kaitun", "https://api.luarmor.net/files/v4/loaders/d6c7959dcc94cd24467080d82a56dcf9.lua")
+        end
+    })
+    TabLT:CreateButton({
+        Name = "Meox Hub Kaitun",
+        Callback = function()
+            safeLoad("Meox Hub Kaitun", "https://raw.githubusercontent.com/MEOW-HUB-DEV/SCRIPT-FREE/refs/heads/main/MeowKaitun.lua")
+        end
+    })
+
+    TabLT:CreateButton({
+        Name = "ADZ KAITUN",
+        Callback = function()
+            safeLoad("ADZ KT", "https://raw.githubusercontent.com/AnDepZaiHub/AnDepZaiHubBeta/refs/heads/main/adzKaitun.lua")
+        end
+    })
+end
+
+if isJumpShowdown then
+    local TabJS = Window:CreateTab("Jump Showdown", 92616478061584)
+    TabJS:CreateSection("📌 Script Jump Showdown")
+
+    TabJS:CreateButton({
+        Name = "Copy Script Jump Showdown",
+        Callback = function()
+            local scriptText = [[script_key="ur key here"
+loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/01868f68b39e5d2e8e789d97b050ee07.lua"))()
+KEY : https://ads.luarmor.net/get_key?for=Kitsu_Key_Access-EDECddRlqemy]]
+            local ok = CopyToClipboardSafe(scriptText)
+            if ok then
+                NotifySafe("Thành công", " Đã sao chép Script Jump Showdown vào clipboard. Dán vào Executor (Ctrl+V).")
+            else
+                NotifySafe("Lỗi", "Executor/ môi trường không hỗ trợ setclipboard. Link đã được hiển thị trong console.")
+                print("Script (copy manually):\n" .. scriptText)
+            end
+        end
+    })
+
+    TabJS:CreateButton({
+        Name = "Esp Event & Esp",
+        Callback = function()
+            safeLoadSmart("JumpShowdown - ESP Events & ESP", "https://rawscripts.net/raw/JJS-Jump-Showdown-Universal-ESP-Events-and-ESP-115402")
+        end
+    })
+end
+
+if isEscapeTsunami then
+    local TabTsunami = Window:CreateTab("Tsunami Brainrots", 11200248810)
+    TabTsunami:CreateSection("📌 Escape Tsunami For Brainrots")
+
+    TabTsunami:CreateButton({
+        Name = "KdmlScripts",
+        Callback = function()
+            safeLoadSmart("KdmlScripts", "https://raw.githubusercontent.com/kedd063/KdmlScripts/refs/heads/main/EscapeTsunamiForBrainrotsV4")
+        end
+    })
+    TabTsunami:CreateButton({
+        Name = "RatX",
+        Callback = function()
+            safeLoadSmart("RatX", "https://raw.githubusercontent.com/Ratkinator/RatX/refs/heads/main/Loader.lua")
+        end
+    })
+    TabTsunami:CreateButton({
+        Name = "Tora Is Me",
+        Callback = function()
+            safeLoad("Tora Is Me", "https://raw.githubusercontent.com/gumanba/Scripts/main/EscapeTsunamiForBrainrots")
+        end
+    })
+    TabTsunami:CreateButton({
+        Name = "OsakaTP2",
+        Callback = function()
+            safeLoad("OsakaTP2", "https://raw.githubusercontent.com/osakaTP2/OsakaTP2/main/Escape%20tsunami%20for%20brainrotsGalaxy6.5")
+        end
+    })
+    TabTsunami:CreateButton({
+        Name = "Vinzhub",
+        Callback = function()
+            safeLoad("Vinzhub", "https://script.vinzhub.com/loader")
+        end
+    })
+    TabTsunami:CreateButton({
+        Name = "Cyrus Hub",
+        Callback = function()
+            safeLoad("Cyrus Hub", "https://raw.githubusercontent.com/kedd063/KdmlScripts/refs/heads/main/EscapeTsunamiForBrainrotsV4")
+        end
+    })
+end
+
+-- [TAB FISH IT]
+if isFishIt then
+    local TabFishIt = Window:CreateTab("Fish It", 81795620397244)
+    TabFishIt:CreateSection("📌 Fish It Script")
+
+    TabFishIt:CreateButton({
+        Name = "Load Script Fisch It",
+        Callback = function()
+            safeLoadSmart("FishIt - FischMain", "https://raw.githubusercontent.com/Skibidiking123/Fisch1/refs/heads/main/FischMain")
+        end
+    })
+    TabFishIt:CreateButton({
+        Name = "Fish IT-2",
+        Callback = function()
+            safeLoadSmart("FishIt - 2", "https://menghub.dannnnbiasalah.workers.dev/")
+        end
+    })
+end
+
+-- [TAB FISH - CHỈ HIỂN THỊ Ở GAME FISH]
+if isFish then
+    local TabFish = Window:CreateTab("Fish", 81795620397244)
+    TabFish:CreateSection("📌 Fish Script")
+
+    TabFish:CreateButton({
+        Name = "Load Lynx Hub",
+        Callback = function()
+            safeLoadSmart("Lynx Hub", "https://raw.githubusercontent.com/4LynxX/Lynx/refs/heads/main/LynxxMain.lua")
+        end
+    })
+    TabFish:CreateButton({
+        Name = "Load Shield Team & Lưu ý : vô nó sẽ hiện bản discord gì đó ấn copy link và đợi 3s script sẽ tự bật nha :>>",
+        Callback = function()
+            safeLoadSmart("Shield Team - AllScript", "https://api.shieldteam.asia/api/allscript")
+        end
+    })
+end
+
+-- [TAB MM2 - CHỈ HIỂN THỊ Ở GAME MURDER MYSTERY 2]
+if isMM2 then
+    local TabMM2 = Window:CreateTab("MM2 Menu", 15142787703)
+    TabMM2:CreateSection("📌 Murder Mystery 2")
+    
+    TabMM2:CreateButton({
+        Name = "Load Overdrive Hub",
+        Callback = function()
+            safeLoadSmart("Overdrive Hub", "https://api.overdrivehub.xyz/v1/auth")
+        end
+    })
+end
+
+-- [TAB GARDEN HORIZONS]
+if isGardenHorizons then
+    local TabGarden = Window:CreateTab("Garden Horizons", 99618226040648)
+    TabGarden:CreateSection("📌 Script Garden Horizons")
+    
+    TabGarden:CreateButton({
+        Name = "Load Speed Hub X",
+        Callback = function()
+            safeLoadSmart("Speed Hub X", "https://raw.githubusercontent.com/AhmadV99/Speed-Hub-X/main/Speed%20Hub%20X.lua")
+        end
+    })
+    TabGarden:CreateButton({
+        Name = "Vxeze Hub",
+        Callback = function()
+            safeLoad("Vxeze Hub", "https://vxezestudio.online/api/scripts/script_gb12wihwnml/plain")
+        end
+    })
+    TabGarden:CreateButton({
+        Name = "BlueX-Hub",
+        Callback = function()
+            _G.AutoTranslate = true
+            _G.SaveConfig = true
+            safeLoad("BlueX-Hub", "https://raw.githubusercontent.com/Dev-BlueX/BlueX-Hub/refs/heads/main/Main.lua")
+        end
+    })
+    TabGarden:CreateButton({
+        Name = "Street Hub",
+        Callback = function()
+            safeLoad("Street Hub", "https://pandadevelopment.net/virtual/file/36a1d4513a0ce188")
+        end
+    })
+    TabGarden:CreateButton({
+        Name = "Cyraa Hub",
+        Callback = function()
+            safeLoad("Cyraa Hub", "https://raw.githubusercontent.com/LynX99-9/komtolmmek2/refs/heads/main/Garden%20Horizon")
+        end
+    })
+    TabGarden:CreateButton({
+        Name = "Chiyo Hub",
+        Callback = function()
+            safeLoad("Chiyo Hub", "https://raw.githubusercontent.com/kaisenlmao/loader/refs/heads/main/chiyo.lua")
+        end
+    })
+    TabGarden:CreateButton({
+        Name = "Cz",
+        Callback = function()
+            safeLoad("Cz", "https://airflowscript.com/loader")
+        end
+    })
+end
+
+if isEvadeGame then
+    local TabEvade = Window:CreateTab("Evade", 98194683460296)
+    TabEvade:CreateSection("📌 Evade Scripts")
+
+    TabEvade:CreateButton({
+        Name = "Evade Loader",
+        Callback = function()
+            safeLoadSmart("Evade Loader", "https://api.luarmor.net/files/v3/loaders/f3ed0bc1276c97a6404b78a360196d2d.lua")
+        end
+    })
+    TabEvade:CreateButton({
+        Name = "NonameX-Keyless",
+        Callback = function()
+            safeLoadSmart("NonameX", "https://rawscripts.net/raw/Evade-NonameX-Keyless-122316")
+        end
+    })
+    TabEvade:CreateButton({
+        Name = "Draconic Hub",
+        Callback = function()
+            safeLoadSmart("Draconic Hub", "https://raw.githubusercontent.com/Nyxarth910/Draconic-Hub-X/refs/heads/main/files/Evade/Overhaul.lua")
+        end
+    })
+    TabEvade:CreateButton({
+        Name = "DP HUB-Keyless",
+        Callback = function()
+            safeLoadSmart("DP HUB ", "\108\111\97\100\115\116\114\105\110\103\40\103\97\109\101\58\72\116\116\112\71\101\116\40\34\104\116\116\112\115\58\47\47\114\97\119\46\103\105\116\104\117\98\117\115\101\114\99\111\110\116\101\110\116\46\99\111\109\47\67\79\79\76\88\80\76\79\47\68\80\45\72\85\66\45\99\111\111\108\120\112\108\111\47\114\101\102\115\47\104\101\97\100\115\47\109\97\105\110\47\69\118\97\100\101\46\108\117\97\34\41\41\40\41")
+        end
+    })
+    TabEvade:CreateButton({
+        Name = "Real King",
+        Callback = function()
+            safeLoadSmart("Real King", "https://raw.githubusercontent.com/zReal-King/Evade/main/Main.lua")
+        end
+    })
+    TabEvade:CreateButton({
+        Name = "Free Script ESP",
+        Callback = function()
+            safeLoadSmart("Free Script ESP", "https://raw.githubusercontent.com/JScripter-Lua/Mid-Journey_Open-Source/refs/heads/main/Evade%20Lag%20Free%20Test.lua")
+        end
+    })
+    TabEvade:CreateButton({
+        Name = "Script Evade No Key",
+        Callback = function()
+            safeLoadSmart("Script Evade No Key", "https://pastebin.com/raw/PY70SKrt")
+        end
+    })
+    TabEvade:CreateButton({
+        Name = "Evade Auto Farm Script (NO KEY)",
+        Callback = function()
+        getgenv().farm = false -- false/true
+            safeLoadSmart("Evade Auto Farm Script (NO KEY)", "https://raw.githubusercontent.com/Bac0nHck/Scripts/refs/heads/main/evade-farm.lua")
+        end
+    })
+    TabEvade:CreateButton({
+        Name = "Tbao Hub",
+        Callback = function()
+            safeLoadSmart("Thao Hub", "https://raw.githubusercontent.com/tbao143/thaibao/main/TbaoHubEvade")
+        end
+    })
+end
+
+-- [TAB DOORS]
+if isDoors then
+    local TabDoors = Window:CreateTab("Doors", 12209991869) 
+    TabDoors:CreateSection("📌 Script Doors")
+
+    TabDoors:CreateButton({
+        Name = "ZeScript",
+        Callback = function()
+            safeLoadSmart("ZeScript", "https://api.jnkie.com/api/v1/luascripts/public/4192419a355cd0233b7416f498b78b91eb87bfb6123a4d214a2aa1e9243c6c72/download")
+        end
+    })
+end
+
+if is99Nights then
+    local ForestTab = Window:CreateTab("99 Nights", 125094830280177)
+    ForestTab:CreateSection("📌 Script 99 Nights In The Forest")
+    
+    ForestTab:CreateButton({
+        Name = "Nova Hub",
+        Callback = function()
+            safeLoad("Nova Hub", "https://raw.githubusercontent.com/M4rshmall0ow-dev/Nova/refs/heads/main/Script%20Loader%20Main")
+        end
+    })
+end
+
+if isKnockout then
+    local KnockoutTab = Window:CreateTab("Knockout!", 4549964420)
+    KnockoutTab:CreateSection("📌 Script Knockout")
+    
+    KnockoutTab:CreateButton({
+        Name = "Zenk Studio",
+        Callback = function()
+            safeLoad("Zenk Studio", "https://api.luarmor.net/files/v4/loaders/07d5a780a235a759854475853c1ced8f.lua")
+        end
+    })
+    KnockoutTab:CreateButton({
+        Name = "Luminis",
+        Callback = function()
+            safeLoad("Luminis", "https://api.luarmor.net/files/v4/loaders/24df4399c3458d81346da5dda02fe1d1.lua")
+        end
+    })
+    KnockoutTab:CreateButton({
+        Name = "JNHHGaming",
+        Callback = function()
+            safeLoad("JNHHGaming", "https://raw.githubusercontent.com/JNHHGaming/Knockout/refs/heads/main/Knockout")
+        end
+    })
+    KnockoutTab:CreateButton({
+        Name = "QewX",
+        Callback = function()
+            safeLoad("QewX", "https://pastebin.com/raw/Rhm6VrXp")
+        end
+    })
+end 
+
+if isTitanFishing then
+    local TitanTab = Window:CreateTab("Titan-Fishing", 104623054699018)
+    TitanTab:CreateSection("  Script Câu cá vạn cân")
+    
+    TitanTab:CreateButton({
+        Name = "Khfresh Hub",
+        Callback = function()
+            safeLoad("Khfresh Hub", "https://pastefy.app/F1ZRpgGL/raw")
+        end
+    })
+end
+
+-- [TAB TIỆN ÍCH] - khi không rơi vào game đặc biệt
+if not isJJS and not isTSB and not isBloxFruit and not isJumpShowdown and not isEscapeTsunami and not isFishIt and not isFish and not isMM2 and not isGardenHorizons and not isEvadeGame and not is99Nights and not isDoors and not isKnockout and not isTitanFishing then
+    local TabUtility = Window:CreateTab("Script", 11570895459)
+    TabUtility:CreateLabel([[Game này hiện tại chưa hỗ trợ, Sẽ hỗ trợ trong thời gian tới,Script chung ở TabChung]])
+end
+
+local TabChung = Window:CreateTab("Chung", 5704671379)
+TabChung:CreateSection("📌 Script Chung")
+TabChung:CreateButton({
+    Name = "Infinite Yield (FE Admin)",
+    Callback = function()
+        safeLoadSmart("Infinite Yield", "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source")
+    end
+})
+TabChung:CreateButton({
+    Name = "CaoTuanAnh",
+    Callback = function()
+        safeLoadSmart("CaoTuanAnh", "https://raw.githubusercontent.com/getscript-vn/CaoTuanAnh/refs/heads/main/loadermanager.lua")
+    end
+})
+TabChung:CreateButton({
+    Name = "FE Animations",
+    Callback = function()
+        safeLoadSmart("FE Animations", "https://raw.githubusercontent.com/BeemTZy/Motiona/refs/heads/main/source.lua")
+    end
+})
+TabChung:CreateButton({
+    Name = "Load Speed Hub X",
+    Callback = function()
+        safeLoadSmart("Speed Hub X", "https://raw.githubusercontent.com/AhmadV99/Speed-Hub-X/main/Speed%20Hub%20X.lua")
+    end
+})
+TabChung:CreateButton({
+    Name = "FPS UNLOCKED + SHADERS",
+    Callback = function()
+        safeLoadSmart("FPS UNLOCKED + SHADERS", "https://raw.githubusercontent.com/67HubDev/all/refs/heads/main/FPS%20UNLOCKED%20%2B%20SHADERS")
+    end
+})
+TabChung:CreateButton({
+    Name = "RTXShader",
+    Callback = function()
+        safeLoadSmart("RTXShader", "https://pastefy.app/ymruM9Ul/raw")
+    end
+})
+TabChung:CreateButton({
+    Name = "FE EMOTES",
+    Callback = function()
+        safeLoadSmart("FE EMOTES", "https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/Emotes.lua")
+    end
+})
+TabChung:CreateButton({
+    Name = "AnimationLGR",
+    Callback = function()
+        safeLoadSmart("AnimationLGR", "https://raw.githubusercontent.com/Mereeeecuf/Developer-Tools/refs/heads/main/AnimationLGR")
+    end
+})
+-- ==== END: safe wrapper ====
+
+
+-- [TAB ÂM NHẠC - PROMAX EDITION (UPGRADED TO LIST VIEW)]
+local TabMusic = Window:CreateTab("Âm Nhạc 🎵", 14420842855)
+
+-- === HUD Âm nhạc (Góc trên cùng ở giữa màn hình) ===
+local MusicHUDGui = Instance.new("ScreenGui")
+MusicHUDGui.Name = "67_Music_HUD"
+MusicHUDGui.IgnoreGuiInset = true
+MusicHUDGui.Enabled = false -- [MỚI] Tắt HUD mặc định khi vừa load script
+pcall(function()
+    MusicHUDGui.Parent = game:GetService("CoreGui")
+end)
+if not MusicHUDGui.Parent then
+    MusicHUDGui.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+end
+
+local MusicHUDFrame = Instance.new("Frame")
+MusicHUDFrame.Size = UDim2.new(0, 190, 0, 30) -- Đã làm nhỏ gọn hơn
+MusicHUDFrame.AnchorPoint = Vector2.new(0.5, 0) -- [SỬA] Neo tâm GUI ở giữa cạnh trên
+MusicHUDFrame.Position = UDim2.new(0.5, 0, 0, 15) -- [SỬA] Đẩy ra giữa trục X (0.5) và cách mép trên 15 pixel
+MusicHUDFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15) -- Màu tối sang trọng
+MusicHUDFrame.BackgroundTransparency = 0.25 
+MusicHUDFrame.BorderSizePixel = 0
+MusicHUDFrame.Parent = MusicHUDGui
+
+local HUDCorner = Instance.new("UICorner")
+HUDCorner.CornerRadius = UDim.new(0, 8) -- Bo góc mềm mại
+HUDCorner.Parent = MusicHUDFrame
+
+-- Thêm Gradient cho background nhìn ảo diệu hơn
+local HUDGradient = Instance.new("UIGradient")
+HUDGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 180, 180))
+})
+HUDGradient.Rotation = 45
+HUDGradient.Parent = MusicHUDFrame
+
+local HUDStroke = Instance.new("UIStroke")
+HUDStroke.Color = Color3.fromRGB(0, 255, 255)
+HUDStroke.Thickness = 2
+HUDStroke.Transparency = 0.1
+HUDStroke.Parent = MusicHUDFrame
+
+-- [MỚI] Icon ảnh thay cho chữ 🎵
+local MusicIcon = Instance.new("ImageLabel")
+MusicIcon.Size = UDim2.new(0, 18, 0, 18)
+MusicIcon.Position = UDim2.new(0, 8, 0.5, -9) -- Căn trái, chính giữa dọc
+MusicIcon.BackgroundTransparency = 1
+MusicIcon.Image = "rbxassetid://113504329593037"
+MusicIcon.Parent = MusicHUDFrame
+
+local MusicHUDLabel = Instance.new("TextLabel")
+MusicHUDLabel.Size = UDim2.new(1, -34, 1, 0) -- Giảm size để nhường chỗ cho ảnh
+MusicHUDLabel.Position = UDim2.new(0, 30, 0, 0) -- Đẩy sang phải một chút
+MusicHUDLabel.BackgroundTransparency = 1
+MusicHUDLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+MusicHUDLabel.TextXAlignment = Enum.TextXAlignment.Left
+MusicHUDLabel.Font = Enum.Font.GothamBold -- Font đậm và rõ nét hơn
+MusicHUDLabel.TextSize = 12 -- Giảm size chữ cho hợp khung nhỏ
+MusicHUDLabel.Text = "Không Có" -- Sửa text mặc định (Bỏ 🎵)
+MusicHUDLabel.TextWrapped = true
+MusicHUDLabel.Parent = MusicHUDFrame
+-- ===========================================
+
+local IsLooped = true -- Mặc định là lặp lại bài hiện tại
+local CurrentSelectedSongName = ""
+
+TabMusic:CreateSection("📌 Trình phát nhạc")
+
+TabMusic:CreateSlider({
+    Name = "🔊 Âm Lượng Nhạc",
+    Range = {0, 10},
+    Increment = 0.5,
+    CurrentValue = 2,
+    Callback = function(Value)
+        CurrentVolume = Value
+        if CurrentMusic then
+            CurrentMusic.Volume = Value
+        end
+    end,
+})
+
+-- Thêm Toggle bật/tắt HUD
+TabMusic:CreateToggle({
+    Name = "👁️ Hiển thị HUD Âm Nhạc",
+    CurrentValue = false, -- [SỬA] Đặt thành false để nút gạt tắt mặc định đồng bộ với GUI
+    Callback = function(Value)
+        if MusicHUDGui then
+            MusicHUDGui.Enabled = Value
+        end
+    end,
+})
+
+-- Đổi Toggle Shuffle thành Toggle Loop
+TabMusic:CreateToggle({
+    Name = "🔁 Chế độ: Lặp lại bài hiện tại (Loop)",
+    CurrentValue = true,
+    Callback = function(Value)
+        IsLooped = Value
+        if CurrentMusic then
+            CurrentMusic.Looped = IsLooped
+        end
+        if IsLooped then
+            Notify("Music", "Đã bật chế độ lặp lại bài hiện tại!")
+        else
+            Notify("Music", "Đã tắt chế độ lặp lại (Phát ngẫu nhiên khi hết bài)!")
+        end
+    end,
+})
+
+TabMusic:CreateButton({
+    Name = "🛑 Dừng Nhạc Đang Phát",
+    Callback = function()
+        if CurrentMusic then
+            CurrentMusic:Stop()
+            CurrentMusic:Destroy()
+            CurrentMusic = nil
+            CurrentSelectedSongName = ""
+            Notify("Music", "Đã dừng tất cả âm nhạc!")
+        else
+            Notify("Music", "Hiện không có nhạc nào đang phát.")
+        end
+    end
+})
+
+TabMusic:CreateSection("🔎 Tìm kiếm & Danh sách bài hát")
+
+-- Database bài hát
+local MusicDatabase = {    
+    ["Ai đưa em về"] = "119589720384457",
+    ["F-L-Y"] = "76819270320985",
+    ["NO MERCI"] = "136843754633280",
+    ["Stay With Me (Remix)"] = "137717310854691",
+    ["CALIENTE (Mega Slowed)"] = "105492220688862",
+    ["Chill + Fonk"] = "82149511707056",
+    ["Fonk"] = "108630241662018",
+    ["SAIKAI"] = "79262785467239",
+    ["Đồi Gió Sao Quá Khó Để Gặp Em"] = "83705430066881",
+    ["Nocturne in E-Flat Major"] = "9045765634",
+    ["Nhạc Buồn"] = "83705430066881",
+    ["CHRISTMAS FUNK"] = "140614684910646",
+    ["Mad Phonk Addict"] = "140274552295461",
+    ["Low Cortisol"] = "110919391228823",
+    ["Infinitely Expanding"] = "131649240815291",
+    ["Stray"] = "120102995443063",
+    ["Treachery (Bleach)"] = "138545624185373",
+    ["Forgotten Past"] = "1838873271",
+    ["underfell sans theme"] = "101730223568557",
+    ["Thunderclap"] = "103590461924679",
+    ["I'm a Believer - Instrumental"] = "9039704032",
+    ["d3r - love domb"] = "18841891575",
+    ["CUTEMAKMAKFUNK (Slowed)"] = "120871403922972",
+    ["CoolBeat"] = "110788401793874",
+    ["Rainie love"] = "79277371759525",
+    ["Black Heart"] = "126517719517563",
+    ["Rồng Thiên"] = "86406401105714",
+    ["Tự Đa Tình"] = "102740989485567",
+    ["Hachimi"] = "88349464000927",  
+    ["Nhạc Trung"] = "82475562998551",
+    ["Kerosense"] = "17647322226",
+    ["MONTAGEM - PRRUTCHAKO"] = "9045765634",
+    ["Want To Love"] = "104846670980072",
+    ["Madira"] = "8494188412",
+    ["Phonk Remix"] = "16662833837",
+    ["Phonk-2"] = "16190783774",
+    ["Em là gió"] = "138802194906464",
+    ["Morning"] = "140722099430139",
+    ["Dịu dàng"] = "140695633562281",
+    ["Phonk(Super slowed)"] = "127521546166507",
+    ["Deadlines"] = "140628387917926",
+    ["Lời hứa sóng cuốn"] = "134473054863425",
+    ["Chạm Lặng"] = "106534572994709",
+    ["Nothin On Me"] = "9048375035",
+    ["Lofi VietNam Christmas"] = "129361584564255",
+    ["Nắng Nhạt Dần"] = "128310680553165",
+    ["Mộng Hoa Bay"] = "121439292363731",
+    ["Tấm Gương Ký Ức"] = "114337890778326",
+    ["Đêm Cuối Cùng"] = "110842976047767",
+    ["Trái Tim Lạc Lối"] = "86048865916358",
+    ["Dưới Ánh Đèn Đêm"] = "139254533597672",
+    ["Mơ Một Lần"] = "77538934822932",
+    ["Funk Espia (Slowed)"] = "93722279965317",
+    ["Fusion (Slowed)"] = "92500405029901",
+    ["Fusion (Original)"] = "89180400948567",
+    ["Funk Espia (Speed Up)"] = "87186168756872",
+    ["Next!(Speed Up)"] = "105630261430700",
+    ["Tiktok"] = "118507373399694",
+    ["Guru"] = "125598466208798",
+    ["Moment After The Fall"] = "117533978765066",
+    ["Next!(Original Mix)"] = "89576775902250",
+    ["Itsy Bitsy Spider (Super Slowed)"] = "85491269651694",
+    ["StarDust (Short)"] = "123289189590617",
+    ["Resistance Treinamento (Super Sped Up)"] = "90920762460306",
+    ["StarDust (Speed up)"] = "123289189590617",
+    ["X-Knight (SpeedUp+)"] = "81055807452410",
+    ["Xeno"] = "127502623565534",
+    ["Fisson (Speed Up)"] = "134011921316879",
+    ["Fisson (Original)"] = "118349786848415",
+    ["StarDust"] = "90359988371949",
+    ["Dare"] = "139188421510869",
+    ["I Hope"] = "129928491449088",
+    ["Vậy là anh sai"] = "129772438082327",
+    ["La la ta có em"] = "102882490871540",
+    ["Mưa đỏ"] = "102055738614721",
+    ["Loyal"] = "132480292381760",
+    ["Quốc ca"] = "1845922899",
+    ["Không một lời từ biệt "] = "126245988087988",
+    ["Tuổi trẻ thế hệ bác hồ"] = "113815049685028",
+    ["Thăng hoa dưới ánh sao"] = "81163148407120",
+    ["Khô gà"] = "99152674992699",
+}
+
+-- Tạo danh sách tên bài hát cho Dropdown ban đầu
+local FullSongList = {}
+for name, _ in pairs(MusicDatabase) do
+    table.insert(FullSongList, name)
+end
+table.sort(FullSongList)
+
+local PlaylistDropdown = TabMusic:CreateDropdown({
+    Name = "Chọn bài hát từ danh sách (Playlist)",
+    Options = FullSongList,
+    CurrentOption = {"Chọn bài hát..."},
+    MultipleOptions = false,
+    Flag = "MusicPlaylistDropdown",
+    Callback = function(Options)
+        CurrentSelectedSongName = Options[1]
+        if CurrentSelectedSongName and MusicDatabase[CurrentSelectedSongName] then
+            PlayMusic(MusicDatabase[CurrentSelectedSongName], CurrentSelectedSongName)
+        end
+    end,
+})
+
+TabMusic:CreateInput({
+    Name = "Nhập tên để lọc danh sách",
+    PlaceholderText = "Tìm kiếm nhanh...",
+    RemoveTextAfterFocusLost = false,
+    Callback = function(Text)
+        local FilteredList = {}
+        if Text == "" then
+            PlaylistDropdown:Refresh(FullSongList, true)
+            return
+        end
+        
+        local lowerText = string.lower(Text)
+        for name, _ in pairs(MusicDatabase) do
+            if string.find(string.lower(name), lowerText) then
+                table.insert(FilteredList, name)
+            end
+        end
+        
+        if #FilteredList > 0 then
+            table.sort(FilteredList)
+            PlaylistDropdown:Refresh(FilteredList, true)
+        else
+            PlaylistDropdown:Refresh({"❌ Không tìm thấy!"}, true)
+        end
+    end,
+})
+
+TabMusic:CreateSection("🔍 Phát nhạc theo ID tùy chỉnh")
+local CustomID = ""
+TabMusic:CreateInput({
+    Name = "Nhập Sound ID thủ công",
+    PlaceholderText = "Ví dụ: 127521546166507",
+    RemoveTextAfterFocusLost = false,
+    Callback = function(Text)
+        CustomID = Text
+    end,
+})
+
+TabMusic:CreateButton({
+    Name = "🎵 Phát theo ID đã nhập",
+    Callback = function()
+        if CustomID == "" then
+            Notify("Lỗi", "Vui lòng nhập ID nhạc trước!")
+            return
+        end
+        task.spawn(function()
+            local testSound = Instance.new("Sound")
+            testSound.SoundId = "rbxassetid://" .. CustomID
+            testSound.Volume = 0
+            testSound.Parent = game:GetService("SoundService")
+
+            local loaded = false
+            local timeout = false
+
+            local loadConn = testSound.Loaded:Connect(function()
+                loaded = true
+                testSound:Destroy()
+                if not timeout then
+                    CurrentSelectedSongName = "ID: " .. CustomID
+                    PlayMusic(CustomID, "Custom Sound ("..CustomID..")")
+                end
+            end)
+
+            task.delay(5, function()
+                if not loaded then
+                    timeout = true
+                    loadConn:Disconnect()
+                    testSound:Destroy()
+                    Notify("Lỗi", "ID nhạc không hợp lệ hoặc không thể tải.")
+                end
+            end)
+            testSound:Play()
+        end)
+    end
+})
+
+-- [MỚI] Vòng lặp siêu mượt cho hiệu ứng Animation Viền và Icon
+task.spawn(function()
+    local RunService = game:GetService("RunService")
+    RunService.RenderStepped:Connect(function()
+        if HUDStroke and HUDStroke.Parent and MusicHUDFrame and MusicHUDFrame.Parent then
+            local t = tick()
+            -- Viền đổi màu RGB mượt mà (60FPS+)
+            HUDStroke.Color = Color3.fromHSV((t % 5) / 5, 0.8, 1)
+            
+            -- Tạo nhịp đập cho viền và lắc nhẹ icon nếu đang phát nhạc
+            if CurrentMusic and CurrentMusic.IsPlaying then
+                local pulse = math.abs(math.sin(t * 4)) * 0.8
+                HUDStroke.Thickness = 1.5 + pulse
+                MusicIcon.Rotation = math.sin(t * 3) * 10 
+            else
+                HUDStroke.Thickness = 1.5
+                MusicIcon.Rotation = 0
+            end
+        end
+    end)
+end)
+
+-- === Vòng lặp kiểm tra âm nhạc & Text HUD ===
+task.spawn(function()
+    local lastSound = nil
+    local endedConnection = nil
+
+    while task.wait(0.5) do
+        if CurrentMusic then
+            -- Cập nhật Text
+            local sName = CurrentSelectedSongName
+            if sName == "" or sName == nil then sName = "Không xác định" end
+            MusicHUDLabel.Text = sName -- Đã bỏ Emoji cũ ở đây
+
+            -- Khi bài hát chuyển sang mới
+            if CurrentMusic ~= lastSound then
+                lastSound = CurrentMusic
+                CurrentMusic.Looped = IsLooped -- Cập nhật Looped theo chế độ
+                
+                -- Ngắt kết nối Ended cũ để tránh đụng logic
+                if endedConnection then
+                    endedConnection:Disconnect()
+                    endedConnection = nil
+                end
+                
+                -- Gắn sự kiện Ended mới để phát ngẫu nhiên NẾU đang tắt Lặp (Loop = false)
+                endedConnection = CurrentMusic.Ended:Connect(function()
+                    if not IsLooped then
+                        task.spawn(function()
+                            local keys = {}
+                            for k, v in pairs(MusicDatabase) do table.insert(keys, k) end
+                            local randomKey = keys[math.random(1, #keys)]
+                            
+                            -- Tránh phát lại đúng bài cũ nếu playlist lớn hơn 1
+                            while randomKey == CurrentSelectedSongName and #keys > 1 do
+                                randomKey = keys[math.random(1, #keys)]
+                            end
+                            
+                            CurrentSelectedSongName = randomKey
+                            PlayMusic(MusicDatabase[randomKey], randomKey)
+                        end)
+                    end
+                end)
+            else
+                -- Đảm bảo trạng thái Looped luôn đúng nếu user bấm Toggle giữa chừng
+                if CurrentMusic.Looped ~= IsLooped then
+                    CurrentMusic.Looped = IsLooped
+                end
+                
+                -- FALLBACK BẢO VỆ
+                if not IsLooped and not CurrentMusic.IsPlaying and CurrentMusic.TimeLength > 0 and (CurrentMusic.TimeLength - CurrentMusic.TimePosition) < 1.5 then
+                    task.spawn(function()
+                        local keys = {}
+                        for k, v in pairs(MusicDatabase) do table.insert(keys, k) end
+                        local randomKey = keys[math.random(1, #keys)]
+                        while randomKey == CurrentSelectedSongName and #keys > 1 do
+                            randomKey = keys[math.random(1, #keys)]
+                        end
+                        CurrentSelectedSongName = randomKey
+                        PlayMusic(MusicDatabase[randomKey], randomKey)
+                    end)
+                end
+            end
+        else
+            MusicHUDLabel.Text = "Không Có" -- Sửa theo yêu cầu
+            lastSound = nil
+            if endedConnection then
+                endedConnection:Disconnect()
+                endedConnection = nil
+            end
+        end
+    end
+end)
+local TabFeedback = Window:CreateTab("Feedback", 81037865260060)
+TabFeedback:CreateSection("✉️ Gửi Lỗi/Ý tưởng")
+TabFeedback:CreateInput({
+    Name = "Gửi Lỗi/Ý tưởng",
+    PlaceholderText = "Mô tả lỗi hoặc ý tưởng của bạn...",
+    RemoveTextAfterFocusLost = true,
+    Callback = function(text)
+        local HttpService = game:GetService("HttpService")
+        local MarketplaceService = game:GetService("MarketplaceService")
+        local Players = game:GetService("Players")
+        local LocalPlayer = Players.LocalPlayer -- [MỚI] Khai báo LocalPlayer
+
+        -- nếu đã có version thì giữ, nếu chưa thì đặt mặc định
+        _G._scriptVersion = _G._scriptVersion or "BETA"
+
+        -- Rate limit (giữ ở _G để tồn tại giữa lần chạy)
+        _G._lastFeedbackSend = _G._lastFeedbackSend or 0
+        local now = tick()
+        local RATE_LIMIT = 30 -- giây
+
+        if now - _G._lastFeedbackSend < RATE_LIMIT then
+            local waitSec = math.ceil(RATE_LIMIT - (now - _G._lastFeedbackSend))
+            if Notify then
+                pcall(Notify, "Vui lòng đợi", ("Bạn vừa gửi rồi — thử lại sau %d giây."):format(waitSec))
+            else
+                pcall(function()
+                    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Vui lòng đợi", Text = ("Thử lại sau %d giây."):format(waitSec), Duration = 4})
+                end)
+            end
+            return
+        end
+
+        if not text or text:match("^%s*$") then
+            if Notify then
+                pcall(Notify, "Lỗi", "Vui lòng nhập nội dung trước khi gửi.")
+            else
+                pcall(function()
+                    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Lỗi", Text = "Vui lòng nhập nội dung trước khi gửi.", Duration = 4})
+                end)
+            end
+            return
+        end
+
+        -- Parse tags (hỗ trợ [tag] hoặc #tag)
+        local function extract_tag(s, candidates)
+            s = s:lower()
+            for _, c in ipairs(candidates) do
+                if s:find("%["..c.."%]") or s:find("#"..c) or s:find("%("..c.."%)") then
+                    return c
+                end
+            end
+            return nil
+        end
+
+        local function remove_all_tags(s)
+            -- loại bỏ các dạng [tag], #tag, (tag)
+            s = s:gsub("%[(.-)%]", ""):gsub("#(%w+)", ""):gsub("%((.-)%)", "")
+            -- trim
+            s = s:gsub("^%s+", ""):gsub("%s+$", "")
+            return s
+        end
+
+        local typeCandidates = {"bug", "idea", "other"}
+        local prioCandidates = {"low", "normal", "high"}
+
+        local lowerText = text:lower()
+        local detectedType = extract_tag(lowerText, typeCandidates) or "other"
+        local detectedPrio = extract_tag(lowerText, prioCandidates) or "normal"
+
+        -- chuẩn hoá display
+        local displayType = ({bug="Bug", idea="Idea", other="Other"})[detectedType] or "Other"
+        local displayPrio = ({low="Low", normal="Normal", high="High"})[detectedPrio] or "Normal"
+
+        -- Xóa tag khỏi nội dung gửi
+        local cleaned = remove_all_tags(text)
+
+        -- Lấy tên game an toàn
+        local placeName = tostring(game.PlaceId)
+        pcall(function()
+            local ok, info = pcall(function() return MarketplaceService:GetProductInfo(game.PlaceId) end)
+            if ok and info and info.Name then placeName = info.Name end
+        end)
+
+        -- Tính uptime nếu có _G._scriptStart
+        local uptimeText = "N/A"
+        if _G._scriptStart and type(_G._scriptStart) == "number" then
+            local uptime = math.floor(tick() - _G._scriptStart)
+            if uptime < 0 then uptime = 0 end
+            local hh = math.floor(uptime / 3600)
+            local mm = math.floor((uptime % 3600) / 60)
+            local ss = math.floor(uptime % 60)
+            uptimeText = string.format("%02d:%02d:%02d", hh, mm, ss)
+        end
+
+        local scriptVer = tostring(_G._scriptVersion or "unknown")
+
+        -- [MỚI] Lấy thông tin người chơi
+        local playerName = LocalPlayer and LocalPlayer.Name or "Unknown"
+        local playerId = LocalPlayer and tostring(LocalPlayer.UserId) or "Unknown"
+
+        -- Giới hạn độ dài mô tả để tránh lỗi Discord (an toàn)
+        local MAX_DESC = 1900
+        if #cleaned > MAX_DESC then
+            cleaned = cleaned:sub(1, MAX_DESC) .. "\n\n[...đã cắt bớt...]"
+        end
+
+        local payload = {
+            embeds = {{
+                author = {
+                    name = "Support",
+                    icon_url = "https://cdn.discordapp.com/attachments/1448545962393075763/1482232341408514059/anh-anime-gojo-18.jpg?ex=69b633f0&is=69b4e270&hm=38730689885654b713790656579cad24c1b473e9cb739abe0588b594d6229331&"
+                },
+                title = ("[%s] %s"):format(displayType, displayPrio),
+                description = cleaned,
+                color = 65535,
+                fields = {
+                    {name = "「Người gửi:」", value = playerName, inline = true}, -- [MỚI] Tên
+                    {name = "「ID Người gửi:」", value = playerId, inline = true}, -- [MỚI] ID
+                    {name = "「Game:」", value = tostring(placeName), inline = true},
+                    {name = "「PlaceID:」", value = tostring(game.PlaceId), inline = true},
+                    {name = "「Uptime:」", value = uptimeText, inline = true},
+                    {name = "「ScriptVersion:」", value = scriptVer, inline = true},
+                },
+                thumbnail = {
+                    url = "https://cdn.discordapp.com/attachments/1448545962393075763/1482222266845495346/anime-gif-collection-v0-x7rt5z1qx90e1.gif?ex=69b62a8e&is=69b4d90e&hm=1c4a37656193725cfc55af4257ab823921fc5cdcd3d2956b1fac52952ec59ee7&"
+                },
+                timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
+            }}
+        }
+
+        local encoded = HttpService:JSONEncode(payload)
+        local success = false
+        
+        -- <<-- HỆ THỐNG WEBHOOK QUA VERCEL PROXY BẢO MẬT -->>
+        local actualWebhookUrl = "https://mmb2.vercel.app/api/feedback"
+        local mySecretKey = "TBoy_67Hub_Secret_2026!" 
+        
+        -- Tạo bảng Headers chứa định dạng JSON và Key bảo mật để giao tiếp với Vercel
+        local myHeaders = {
+            ["Content-Type"] = "application/json",
+            ["x-api-key"] = mySecretKey
+        }
+
+        -- Chỉ tiến hành POST nếu lấy được link hợp lệ (chứa chữ "http")
+        if actualWebhookUrl and actualWebhookUrl ~= "" and actualWebhookUrl:find("http") then
+            pcall(function()
+                -- Thử qua các hàm request phổ biến của các executor, tích hợp myHeaders
+                if syn and syn.request then
+                    syn.request({Url = actualWebhookUrl, Method = "POST", Headers = myHeaders, Body = encoded})
+                    success = true
+                elseif http and http.request then
+                    http.request({Url = actualWebhookUrl, Method = "POST", Headers = myHeaders, Body = encoded})
+                    success = true
+                elseif request then
+                    request({Url = actualWebhookUrl, Method = "POST", Headers = myHeaders, Body = encoded})
+                    success = true
+                elseif fluxus and fluxus.request then
+                    fluxus.request({Url = actualWebhookUrl, Method = "POST", Headers = myHeaders, Body = encoded})
+                    success = true
+                else
+                    -- Fallback an toàn cho các Executor khác (Sử dụng RequestAsync thay vì PostAsync để hỗ trợ custom Header)
+                    local ok, err = pcall(function()
+                        local requestFunc = http_request or request or (HttpService.RequestAsync and function(req) return HttpService:RequestAsync(req) end)
+                        if type(requestFunc) == "function" then
+                           requestFunc({Url = actualWebhookUrl, Method = "POST", Headers = myHeaders, Body = encoded})
+                        end
+                    end)
+                    success = ok
+                end
+            end)
+        else
+            -- Báo lỗi nếu link lấy được bị rỗng, 404 hoặc không có dạng http
+            if Notify then
+                pcall(Notify, "Lỗi Webhook", "Không thể lấy Webhook thực từ server.\nVui lòng kiểm tra lại đường dẫn!")
+            end
+            return
+        end
+
+        if success then
+            _G._lastFeedbackSend = tick()
+            if Notify then
+                pcall(Notify, "Gửi thành công", "Cảm ơn!\nNội dung đã được gửi tới Discord.")
+            else
+                pcall(function()
+                    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Thành công", Text = "Nội dung đã gửi tới Discord.", Duration = 4})
+                end)
+            end
+        else
+            if Notify then
+                pcall(Notify, "Lỗi gửi", "Không thể gửi. Executor có thể không hỗ trợ request.")
+            else
+                pcall(function()
+                    game:GetService("StarterGui"):SetCore("SendNotification", {Title = "Lỗi", Text = "Không thể gửi. Executor có thể không hỗ trợ request.", Duration = 4})
+                end)
+            end
+        end
+    end,
+})
+
+
+-- [TAB TỐI ƯU HÓA - Phiên bản nâng cấp]
+local TabOptimize = Window:CreateTab("Tối ưu hóa", 78754569296388)
+TabOptimize:CreateSection("📌 Tối ưu hóa hiệu suất")
+
+-- lưu trạng thái ban đầu để có thể restore
+local _originalState = {
+    parts = {}, -- store original material/reflectance for parts we change
+    decals = {}, -- store original transparency for decals/textures
+    lighting = {}
+}
+local _applied = false -- đánh dấu đã áp dụng low texture hay chưa
+local _fixLagLoaded = false -- đánh dấu đã load script FixLag Turbo chưa
+
+local function safeNotify(title, text)
+    pcall(function() Notify(title, text) end)
+end
+
+TabOptimize:CreateButton({ 
+    Name = "[🚀] Fix Lag Turbo", Callback = function()
+    if _fixLagLoaded then
+        safeNotify("Fix Lag Turbo", "Script đã được load trước đó.")
+        return
+    end
+    safeNotify("Fix Lag Turbo", "Đang load script...")
+    local ok, err = pcall(function()
+        local http = game:GetService("HttpService")
+        local success, res = pcall(function()
+            return game:HttpGet("https://raw.githubusercontent.com/TurboLite/Script/main/FixLag.lua")
+        end)
+        if not success or not res or res == "" then
+            error("Không tải được nội dung script từ URL.")
+        end
+        local fn, loadErr = loadstring(res)
+        if not fn then error("loadstring lỗi: "..tostring(loadErr)) end
+        fn()
+    end)
+    if ok then
+        _fixLagLoaded = true
+        safeNotify("Fix Lag Turbo", "Hoàn thành load script!")
+    else
+        safeNotify("Fix Lag Turbo - Lỗi", tostring(err))
+    end
+end })
+
+TabOptimize:CreateButton({
+    Name = " [🍂]Script chỉnh đồ hoạ",
+    Callback = function()
+        safeLoad("Script chỉnh đồ hoạ", "https://raw.githubusercontent.com/randomstring0/pshade-ultimate/refs/heads/main/src/cd.lua")
+    end
+})
+
+-- Khởi tạo lại biến lưu trữ (thêm phần terrain)
+local _originalState = {
+    parts = {}, 
+    decals = {}, 
+    lighting = {},
+    terrain = {}
+}
+local _applied = false
+
+TabOptimize:CreateButton({
+    Name = "📉 Low Texture (Giảm đồ họa & Tăng FPS)",
+    Callback = function()
+        if _applied then
+            safeNotify("Tối ưu hóa", "Low Texture đã được áp dụng — dùng nút 'Khôi phục' để trả lại.")
+            return
+        end
+
+        safeNotify("Tối ưu hóa", "Đang dọn dẹp đồ họa (Sẽ mất vài giây, hạn chế giật lag)...")
+        
+        -- Dùng task.spawn để chạy ngầm, không làm treo Menu
+        task.spawn(function()
+            local ok, err = pcall(function()
+                local workspaceDesc = workspace:GetDescendants()
+                local lighting = game:GetService("Lighting")
+                local terrain = workspace:FindFirstChildOfClass("Terrain")
+                
+                -- [1] TỐI ƯU ÁNH SÁNG & BẦU TRỜI
+                pcall(function()
+                    _originalState.lighting.GlobalShadows = lighting.GlobalShadows
+                    _originalState.lighting.FogEnd = lighting.FogEnd
+                    _originalState.lighting.EnvironmentDiffuseScale = lighting.EnvironmentDiffuseScale
+                    _originalState.lighting.EnvironmentSpecularScale = lighting.EnvironmentSpecularScale
+                 
+                    _originalState.lighting.effects = {}
+
+                    -- Tắt Post-Processing, Mây, Khí quyển
+                    for _, child in ipairs(lighting:GetDescendants()) do
+                        if child:IsA("PostEffect") or child:IsA("BlurEffect") or child:IsA("SunRaysEffect") or child:IsA("ColorCorrectionEffect") or child:IsA("BloomEffect") or child:IsA("DepthOfFieldEffect") or child:IsA("Atmosphere") or child:IsA("Clouds") then
+                            -- Lưu trạng thái để khôi phục
+                            if child:IsA("Atmosphere") or child:IsA("Clouds") then
+                                _originalState.lighting.effects[child] = { Parent = child.Parent }
+                                pcall(function() child.Parent = nil end) -- Cất đi thay vì xóa
+                            else
+                                _originalState.lighting.effects[child] = { Enabled = child.Enabled }
+                                pcall(function() child.Enabled = false end)
+                            end
+                        end
+                    end
+
+                    lighting.GlobalShadows = false    
+                    lighting.FogEnd = 9e9
+                    lighting.EnvironmentDiffuseScale = 0
+                    lighting.EnvironmentSpecularScale = 0
+                end)
+
+                -- [2] TỐI ƯU TERRAIN (CỎ & NƯỚC - Boost FPS rất mạnh)
+                if terrain then
+                    pcall(function()
+                        _originalState.terrain = {
+                            Decoration = terrain.Decoration,
+                            WaterWaveSize = terrain.WaterWaveSize,
+                            WaterWaveSpeed = terrain.WaterWaveSpeed
+                        }
+                        terrain.Decoration = false -- TẮT CỎ 3D
+                        terrain.WaterWaveSize = 0    
+                        terrain.WaterWaveSpeed = 0 
+                    end)
+                end
+
+                -- [3] TỐI ƯU PART & HIỆU ỨNG (Chia nhỏ tiến trình chống treo máy)
+                local count = 0
+                for _, v in ipairs(workspaceDesc) do
+                    -- BasePart
+                    if v:IsA("BasePart") and not v:IsA("MeshPart") then
+                        if not _originalState.parts[v] then
+                            _originalState.parts[v] = {
+                                Material = v.Material,
+                                Reflectance = v.Reflectance,
+                                Transparency = v.Transparency,
+                                CastShadow = v.CastShadow
+                            }
+                        end
+                        v.Material = Enum.Material.SmoothPlastic
+                        v.Reflectance = 0
+                        pcall(function() v.CastShadow = false end)
+
+                        -- Mờ kính
+                        if v.Name:lower():find("glass") or v.Name:lower():find("window") then
+                            v.Transparency = math.max(v.Transparency, 0.25)
+                        end
+
+                    -- Decal / Texture
+                    elseif v:IsA("Decal") or v:IsA("Texture") then
+                        if not _originalState.decals[v] then
+                            _originalState.decals[v] = { Transparency = v.Transparency }
+                        end
+                        v.Transparency = 1 -- Ẩn đi thay vì Destroy để có thể Restore
+
+                    -- Các hiệu ứng hạt, tia, khói lửa
+                    elseif v:IsA("ParticleEmitter") or v:IsA("Beam") or v:IsA("Trail") or v:IsA("Sparkles") or v:IsA("Fire") or v:IsA("Smoke") then
+                        if not _originalState.parts[v] then
+                            _originalState.parts[v] = { Enabled = v.Enabled }
+                        end
+                        v.Enabled = false
+
+                    -- Âm thanh rác
+                    elseif v:IsA("Sound") then
+                        if not _originalState.parts[v] then
+                            _originalState.parts[v] = { Volume = v.Volume, Playing = v.IsPlaying }
+                        end
+                        v.Volume = 0
+                        if v.IsPlaying then pcall(function() v:Pause() end) end
+                    end
+
+                    -- BÍ QUYẾT CHỐNG TREO: Nghỉ 1 frame sau mỗi 500 object
+                    count = count + 1
+                    if count % 500 == 0 then
+                        task.wait()
+                    end
+                end
+
+                pcall(function() settings().Rendering.QualityLevel = Enum.QualityLevel.Level01 end)    
+                _applied = true    
+            end)    
+
+            if ok then    
+                safeNotify("Tối ưu hóa", "Đã dọn xong!\n Tắt bóng, xóa cỏ 3D & giảm chất lượng tối đa.")    
+            else    
+                safeNotify("Tối ưu hóa - Lỗi", tostring(err))    
+            end
+        end)
+    end
+})
+
+TabOptimize:CreateButton({
+    Name = "♻️ Khôi phục cấu hình gốc (Restore)",
+    Callback = function()
+        if not _applied then
+            safeNotify("Khôi phục", "Chưa có cấu hình nào bị giảm để khôi phục.")
+            return
+        end
+
+        safeNotify("Khôi phục", "Đang khôi phục (Sẽ mất vài giây)...")
+
+        task.spawn(function()
+            local ok, err = pcall(function()
+                local count = 0
+
+                -- Khôi phục Parts / Hiệu ứng hạt / Âm thanh
+                for obj, data in pairs(_originalState.parts) do
+                    if obj and obj.Parent then
+                        if data.Material then pcall(function() obj.Material = data.Material end) end
+                        if data.Reflectance then pcall(function() obj.Reflectance = data.Reflectance end) end
+                        if data.Transparency then pcall(function() obj.Transparency = data.Transparency end) end
+                        if data.CastShadow ~= nil then pcall(function() obj.CastShadow = data.CastShadow end) end
+                        if data.Enabled ~= nil then pcall(function() obj.Enabled = data.Enabled end) end
+                        if data.Volume then pcall(function() obj.Volume = data.Volume end) end
+                        if data.Playing ~= nil then
+                            pcall(function() if data.Playing and obj.Play then obj:Play() end end)
+                        end
+                    end
+                    count = count + 1
+                    if count % 500 == 0 then task.wait() end
+                end
+
+                -- Khôi phục Decals
+                for obj, data in pairs(_originalState.decals) do
+                    if obj and obj.Parent then
+                        if data.Transparency then pcall(function() obj.Transparency = data.Transparency end) end
+                    end
+                    count = count + 1
+                    if count % 500 == 0 then task.wait() end
+                end
+
+                -- Khôi phục Lighting & Hiệu ứng bầu trời
+                local lighting = game:GetService("Lighting")
+                if _originalState.lighting.GlobalShadows ~= nil then pcall(function() lighting.GlobalShadows = _originalState.lighting.GlobalShadows end) end
+                if _originalState.lighting.FogEnd ~= nil then pcall(function() lighting.FogEnd = _originalState.lighting.FogEnd end) end
+                if _originalState.lighting.EnvironmentDiffuseScale ~= nil then pcall(function() lighting.EnvironmentDiffuseScale = _originalState.lighting.EnvironmentDiffuseScale end) end
+                if _originalState.lighting.EnvironmentSpecularScale ~= nil then pcall(function() lighting.EnvironmentSpecularScale = _originalState.lighting.EnvironmentSpecularScale end) end
+
+                if _originalState.lighting.effects then
+                    for effect, data in pairs(_originalState.lighting.effects) do
+                        if effect then
+                            if data.Parent then pcall(function() effect.Parent = data.Parent end) end
+                            if data.Enabled ~= nil then pcall(function() effect.Enabled = data.Enabled end) end
+                        end
+                    end
+                end
+
+                -- Khôi phục Terrain
+                local terrain = workspace:FindFirstChildOfClass("Terrain")
+                if terrain and _originalState.terrain then
+                    local td = _originalState.terrain
+                    if td.Decoration ~= nil then pcall(function() terrain.Decoration = td.Decoration end) end
+                    if td.WaterWaveSize ~= nil then pcall(function() terrain.WaterWaveSize = td.WaterWaveSize end) end
+                    if td.WaterWaveSpeed ~= nil then pcall(function() terrain.WaterWaveSpeed = td.WaterWaveSpeed end) end
+                end
+
+                pcall(function() settings().Rendering.QualityLevel = Enum.QualityLevel.Automatic end)
+
+                -- Làm trống bộ nhớ sau khi khôi phục
+                _originalState = { parts = {}, decals = {}, lighting = {}, terrain = {} }    
+                _applied = false    
+            end)    
+
+            if ok then    
+                safeNotify("Khôi phục", "Đã khôi phục toàn bộ cấu hình gốc thành công.")    
+            else    
+                safeNotify("Khôi phục - Lỗi", tostring(err))    
+            end
+        end)
+    end
+})
+
+TabOptimize:CreateButton({
+    Name = "🧹 Xóa Chat (Clear Chat Rác)",
+    Callback = function()
+        pcall(function()
+            local chatFrame = game:GetService("Players").LocalPlayer.PlayerGui:FindFirstChild("Chat")
+            if chatFrame then
+                local scroller = chatFrame:FindFirstChild("Frame_MessageLogDisplay", true)
+                if scroller and scroller:FindFirstChild("Scroller") then
+                    for _, msg in pairs(scroller.Scroller:GetChildren()) do
+                        if msg:IsA("Frame") then
+                            msg:Destroy()
+                        end
+                    end
+                    Notify("Tối ưu hóa", "Đã xóa toàn bộ tin nhắn rác trong khung chat!")
+                else
+                    Notify("Tối ưu hóa", "Không tìm thấy dữ liệu chat!")
+                end
+            else
+                Notify("Tối ưu hóa", "Game sử dụng TextChatService mới hoặc Custom Chat!")
+            end
+        end)
+    end
+})
+
+-- Status HUD (phiên bản đã tinh chỉnh)
+local HUD_NAME = "67_Status_HUD_v1"
+_G.ShowStatusHUD = _G.ShowStatusHUD or false
+
+local statusGui, statusFrame, statusLabel
+local connRender -- để lưu connection RenderStepped
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Hỗ trợ tìm GUI parent an toàn (fallback nếu GetSafeGui() không tồn tại)
+local function getSafeGui()
+    if type(GetSafeGui) == "function" then
+        local ok, g = pcall(GetSafeGui)
+        if ok and g then return g end
+    end
+    -- Nếu LocalPlayer chưa sẵn sàng thì chờ; nếu chạy trong môi trường server thì dùng CoreGui (cẩn thận)
+    if Players.LocalPlayer then
+        local playerGui = Players.LocalPlayer:FindFirstChild("PlayerGui")
+        if playerGui then return playerGui end
+        -- fallback: wait for PlayerGui (local script)
+        local ok, pg = pcall(function() return Players.LocalPlayer:WaitForChild("PlayerGui", 5) end)
+        if ok and pg then return pg end
+    end
+    -- cuối cùng fallback vào CoreGui (có thể bị hạn chế trong một số môi trường)
+    return game:GetService("CoreGui")
+end
+
+local function destroyStatusHUD()
+    pcall(function()
+        -- disconnect RenderStepped nếu có
+        if connRender and connRender.Connected then
+            connRender:Disconnect()
+            connRender = nil
+        end
+
+        if statusGui and statusGui.Parent then
+            statusGui:Destroy()
+        end
+
+        -- cố gắng xoá ở các nơi khác (nếu GetSafeGui tồn tại)    
+        local safe = (type(GetSafeGui) == "function" and pcall(GetSafeGui) and getSafeGui()) or getSafeGui()    
+        if safe and safe.FindFirstChild then    
+            local existing = safe:FindFirstChild(HUD_NAME)  
+            if existing then existing:Destroy() end    
+        end    
+
+        local coreExisting = game:GetService("CoreGui"):FindFirstChild(HUD_NAME)    
+        if coreExisting then coreExisting:Destroy() end    
+
+        statusGui, statusFrame, statusLabel = nil, nil, nil
+    end)
+end
+
+_G.destroyStatusHUD = destroyStatusHUD
+
+-- Biến lưu các nhãn (labels) tách biệt
+local lblTime, lblFPS, lblPing
+
+local function createStatusHUD()
+    pcall(function()
+        destroyStatusHUD()
+
+        local safeGui = getSafeGui()
+
+        statusGui = Instance.new("ScreenGui")    
+        statusGui.Name = HUD_NAME    
+        statusGui.IgnoreGuiInset = true    
+        statusGui.ResetOnSpawn = false    
+        statusGui.Parent = safeGui 
+
+        statusFrame = Instance.new("Frame")    
+        statusFrame.Size = UDim2.new(0, 320, 0, 24)    
+        statusFrame.AnchorPoint = Vector2.new(1, 0)    
+        statusFrame.Position = UDim2.new(1, -8, 0, 8)    
+        statusFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)    
+        statusFrame.BackgroundTransparency = 0.35    
+        statusFrame.BorderSizePixel = 0    
+        statusFrame.ZIndex = 9999    
+        statusFrame.Parent = statusGui    
+
+        local corner = Instance.new("UICorner")    
+        corner.CornerRadius = UDim.new(0, 6)    
+        corner.Parent = statusFrame    
+
+        -- [FIX] Sử dụng UIListLayout để cố định vị trí các nhãn
+        local layout = Instance.new("UIListLayout", statusFrame)
+        layout.FillDirection = Enum.FillDirection.Horizontal
+        layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+        layout.VerticalAlignment = Enum.VerticalAlignment.Center
+        layout.SortOrder = Enum.SortOrder.LayoutOrder
+        layout.Padding = UDim.new(0, 5)
+
+        local function createFixedLabel(name, width, order)
+            local lbl = Instance.new("TextLabel")
+            lbl.Name = name
+            lbl.Size = UDim2.new(0, width, 1, 0)
+            lbl.BackgroundTransparency = 1
+            lbl.Font = Enum.Font.GothamSemibold
+            lbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+            lbl.TextSize = 13
+            lbl.TextXAlignment = Enum.TextXAlignment.Center
+            lbl.LayoutOrder = order
+            lbl.ZIndex = 10000
+            lbl.Parent = statusFrame
+            return lbl
+        end
+
+        lblTime = createFixedLabel("Time", 85, 1)
+        local sep1 = createFixedLabel("Sep1", 10, 2)
+        sep1.Text = "|"
+        lblFPS = createFixedLabel("FPS", 65, 3)
+        local sep2 = createFixedLabel("Sep2", 10, 4)
+        sep2.Text = "|"
+        lblPing = createFixedLabel("Ping", 130, 5)
+
+        local smoothed = 60    
+        local startTime = tick()    
+        local pingUpdateTimer = 2 -- Đặt là 2 để lấy dữ liệu ngay lần đầu tiên
+        local lastFpsText = "60"
+        local lastPingText = "??ms"
+        local lastCv = 0
+
+        if connRender and connRender.Connected then    
+            connRender:Disconnect()    
+            connRender = nil    
+        end    
+
+        connRender = RunService.RenderStepped:Connect(function(dt)    
+            if not _G.ShowStatusHUD or not statusFrame or not statusFrame.Parent then    
+                destroyStatusHUD()    
+                return    
+            end    
+
+            -- Tính FPS ngầm để giữ độ chính xác
+            if dt > 0 then    
+                local fps = 1 / dt    
+                smoothed = smoothed * 0.85 + fps * 0.15    
+            end   
+
+            -- Đo FPS và Ping mỗi 2 giây
+            pingUpdateTimer = pingUpdateTimer + dt
+            if pingUpdateTimer >= 2 then
+                pingUpdateTimer = 0
+                lastFpsText = tostring(math.floor(smoothed + 0.5))    
+
+                -- Tính Ping
+                local pingVal = nil    
+                pcall(function()    
+                    local stats = game:GetService("Stats")    
+                    if stats and stats:FindFirstChild("Network") and stats.Network:FindFirstChild("ServerStatsItem") then     
+                        local s = stats.Network.ServerStatsItem    
+                        if s["DataPing"] then pingVal = math.floor(s["DataPing"]:GetValue() + 0.5) end    
+                    end    
+                end)    
+                pcall(function()    
+                    if (not pingVal or pingVal <= 0) and LocalPlayer and LocalPlayer.GetNetworkPing then  
+                        local p = LocalPlayer:GetNetworkPing()    
+                        if type(p) == "number" then pingVal = math.floor(p * 1000 + 0.5) end    
+                    end    
+                end)   
+                lastPingText = pingVal and (tostring(pingVal) .. "ms") or "??ms"    
+
+                -- Tính CV%
+                local diff = 60 - smoothed    
+                if diff > 0 then lastCv = math.floor(math.min(100, (diff / 60) * 100) + 0.5) else lastCv = 0 end    
+            end
+
+            -- Tính Time (cập nhật liên tục để thời gian trôi mượt mà)
+            local now = tick()    
+            local elapsed = math.floor(now - startTime + 0.5)    
+            local hours = math.floor(elapsed / 3600)    
+            local mins = math.floor((elapsed % 3600) / 60)    
+            local secs = elapsed % 60    
+            local timestr = string.format("%02d:%02d:%02d", hours, mins, secs)    
+
+            -- Cập nhật Text tách biệt
+            pcall(function()
+                lblTime.Text = "Time: " .. timestr
+                lblFPS.Text = "FPS: " .. lastFpsText
+                lblPing.Text = string.format("Ping: %s (%02d%%CV)", lastPingText, lastCv)
+            end)
+        end)
+    end)
+end
+
+-- expose toggle (nếu TabOptimize tồn tại)
+if typeof(TabOptimize) == "table" and TabOptimize.CreateToggle then
+    TabOptimize:CreateSection("📌 Fps/Ping")
+    TabOptimize:CreateToggle({
+        Name = "⌛ Hiển Thị FPS/PING",
+        CurrentValue = _G.ShowStatusHUD,
+        Callback = function(val)
+             _G.ShowStatusHUD = val
+            if val then
+                 pcall(createStatusHUD)
+            else
+                pcall(destroyStatusHUD)
+            end
+        end,
+    })
+else
+    if _G.ShowStatusHUD then
+        pcall(createStatusHUD)
+     end
+end
+
+
+        -- [TAB CÀI ĐẶT]
+    local TabSettings = Window:CreateTab("Cài đặt", 11956055886)
+    TabSettings:CreateSection("📌 Tùy chỉnh hệ thống")
+   
+    _G.AntiAFK = false
+    TabSettings:CreateToggle({
+       Name = "Bật Anti-AFK",
+       CurrentValue = false,
+       Flag = "AFK_Flag",
+       Callback = function(v) 
+           _G.AntiAFK = v 
+           if v then Notify("67 Hub", "Đã bật chế độ Anti-AFK") else Notify("67 Hub", "Đã tắt chế độ Anti-AFK") end
+       end,
+    })
+
+    TabSettings:CreateToggle({
+        Name = "Màn hình Trắng (AFK Farm)",
+        CurrentValue = false,
+        Callback = function(Value)
+            AFKFrame.BackgroundColor3 = Color3.new(1, 1, 1)
+            AFKFrame.Visible = Value
+        end,
+    })
+
+    TabSettings:CreateToggle({
+        Name = "Màn hình Đen (AFK Farm)",
+        CurrentValue = false,
+        Callback = function(Value)
+            AFKFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+            AFKFrame.Visible = Value
+        end,
+    })
+    
+    TabSettings:CreateColorPicker({
+        Name = "🎨 Đổi màu nền Menu",
+        Color = Color3.fromRGB(30, 30, 30),
+        Flag = "MenuColorPicker",
+        Callback = function(Value)
+            pcall(function()
+                -- Hàm dò tìm Rayfield UI ở mọi ngóc ngách (an toàn và bao quát hơn)
+                local function getRayfieldUI()
+                    -- 1. Ưu tiên tìm trong vùng giấu UI của executor
+                    if gethui then
+                        local ui = gethui():FindFirstChild("Rayfield")
+                        if ui then return ui end
+                    end
+                    -- 2. Tìm trong CoreGui truyền thống
+                    local core = game:GetService("CoreGui"):FindFirstChild("Rayfield")
+                    if core then return core end
+                    -- 3. Fallback tìm trong PlayerGui của người chơi
+                    local pl = game:GetService("Players").LocalPlayer
+                    if pl then 
+                        local pg = pl:FindFirstChild("PlayerGui")
+                        if pg then return pg:FindFirstChild("Rayfield") end
+                    end
+                    return nil
+                end
+
+                local rayfieldUI = getRayfieldUI()
+                
+                -- Bắt đầu can thiệp và đổi màu
+                if rayfieldUI and rayfieldUI:FindFirstChild("Main") then
+                    -- 1. Đổi màu khung chính
+                    rayfieldUI.Main.BackgroundColor3 = Value
+                    
+                    -- 2. Ẩn ảnh nền nếu có (để màu RGB không bị che)
+                    if rayfieldUI.Main:FindFirstChild("BackgroundImage") then
+                        rayfieldUI.Main.BackgroundImage.ImageTransparency = 1
+                    end
+                    
+                    -- 3. Đổi màu thanh tiêu đề (Topbar)
+                    if rayfieldUI.Main:FindFirstChild("Topbar") then
+                        rayfieldUI.Main.Topbar.BackgroundColor3 = Value
+                    end
+                    
+                    -- 4. Đổi màu khu vực danh sách Tab (nếu muốn đồng bộ hoàn toàn)
+                    if rayfieldUI.Main:FindFirstChild("TabList") then
+                        rayfieldUI.Main.TabList.BackgroundColor3 = Value
+                    end
+                end
+            end)
+        end
+    })
+    
+    TabSettings:CreateSection("📌 Menu Script")
+
+    -- [NÚT ĐÓNG MENU & TẮT TOÀN BỘ CHỨC NĂNG]
+    TabSettings:CreateButton({
+        Name = "❌ Đóng Menu & Tắt toàn bộ chức năng",
+        Callback = function()
+            -- Helper an toàn
+            local function safeCall(fn, ...) pcall(fn, ...) end
+
+            -- 0) Thông báo bắt đầu (non-blocking)  
+            pcall(function()  
+                game:GetService("StarterGui"):SetCore("SendNotification", {  
+                    Title = "6_7 HUB",  
+                    Text = "Đang tắt menu và dọn dẹp...",  
+                    Duration = 3  
+                })  
+            end)  
+
+            -- 1) Dừng & dọn nhạc an toàn (mạnh hơn)  
+            safeCall(function()  
+                -- dừng CurrentMusic nếu còn  
+                if CurrentMusic then  
+                    if type(CurrentMusic.Stop) == "function" then pcall(CurrentMusic.Stop, CurrentMusic) end  
+                    if type(CurrentMusic.Destroy) == "function" then pcall(CurrentMusic.Destroy, CurrentMusic) end  
+                    CurrentMusic = nil  
+                end  
+                -- dừng & xoá tất cả sound có "67" trong tên ở SoundService & Workspace  
+                local ss = game:GetService("SoundService")  
+                for _, s in ipairs(ss:GetDescendants()) do  
+                    if s:IsA("Sound") and tostring(s.Name):match("67") then  
+                        pcall(function() if s.Playing then s:Stop() end end)  
+                        pcall(function() if s.Destroy then s:Destroy() end end)  
+                    end  
+                end  
+                for _, s in ipairs(workspace:GetDescendants()) do  
+                    if s:IsA("Sound") and tostring(s.Name):match("67") then  
+                        pcall(function() if s.Playing then s:Stop() end end)  
+                        pcall(function() if s.Destroy then s:Destroy() end end)  
+                    end  
+                end  
+            end)  
+
+            -- 2) Tắt cờ globals an toàn (mở rộng)  
+            safeCall(function()  
+                _G.AntiAFK = false  
+                _G.AntiKick = false  
+                _G.ShowStatusHUD = false  
+                _G.LowModeEnabled = false  
+                _G.LowGpu = false  
+            end)  
+
+            -- 3) Ẩn / dọn AFK GUI & Loading GUI  
+            safeCall(function()  
+                if AFKFrame and typeof(AFKFrame) == "Instance" then  
+                    pcall(function() AFKFrame.Visible = false end)  
+                end  
+                if AFKGui and typeof(AFKGui) == "Instance" then  
+                    pcall(function() AFKGui:Destroy() end)  
+                    AFKGui = nil  
+                end  
+                if LoadingGui and typeof(LoadingGui) == "Instance" then  
+                    pcall(function() LoadingGui:Destroy() end)  
+                    LoadingGui = nil  
+                end  
+                -- xoá GUI có tiền tố "67_" hoặc tên menu  
+                local function cleanGuiParent(parent)  
+                    if not parent or not parent.GetDescendants then return end  
+                    for _, inst in ipairs(parent:GetDescendants()) do  
+                        local ok, name = pcall(function() return tostring(inst.Name) end)  
+                        if ok and name and (name:match("^67_") or name == "6_7_Extended_Load" or name == "67_Status_HUD_v1") then  
+                            pcall(function() if inst.Destroy then inst:Destroy() end end)  
+                        end  
+                    end  
+                end  
+                pcall(function() cleanGuiParent(game:GetService("CoreGui")) end)  
+                local pl = game:GetService("Players").LocalPlayer  
+                if pl then pcall(function() cleanGuiParent(pl:FindFirstChild("PlayerGui")) end) end  
+            end)  
+
+            -- 4) Khôi phục Lighting nếu _G.* lưu (mạnh, pcall từng phần)  
+            safeCall(function()  
+                local Lighting = game:GetService("Lighting")  
+                if _G.originalBrightness ~= nil then pcall(function() Lighting.Brightness = _G.originalBrightness end) end  
+                if _G.originalClockTime ~= nil then pcall(function() Lighting.ClockTime = _G.originalClockTime end) end  
+                if _G.originalFogEnd ~= nil then pcall(function() Lighting.FogEnd = _G.originalFogEnd end) end  
+                if _G.originalGlobalShadows ~= nil then pcall(function() Lighting.GlobalShadows = _G.originalGlobalShadows end) end  
+            end)  
+
+            -- 5) Khôi phục WalkSpeed / Humanoid các thuộc tính (ưu tiên _G lưu)  
+            safeCall(function()  
+                local targetSpeed = 16  
+                if type(_G.originalWalkSpeed) == "number" then targetSpeed = _G.originalWalkSpeed end  
+                local pl = game:GetService("Players").LocalPlayer  
+                if pl and pl.Character and pl.Character:FindFirstChild("Humanoid") then  
+                    pcall(function()  
+                        local hum = pl.Character.Humanoid  
+                        if type(targetSpeed) == "number" then hum.WalkSpeed = targetSpeed end  
+                        if _G.originalJumpPower and hum["JumpPower"] ~= nil then  
+                            hum.JumpPower = tonumber(_G.originalJumpPower) or 50  
+                            if hum["UseJumpPower"] ~= nil then pcall(function() hum.UseJumpPower = true end) end  
+                        elseif _G.originalJumpPower and hum["JumpHeight"] ~= nil then  
+                            hum.JumpHeight = tonumber(_G.originalJumpPower) or 50  
+                        end  
+                        if _G.originalHipHeight and hum["HipHeight"] ~= nil then  
+                            hum.HipHeight = _G.originalHipHeight  
+                        end  
+                    end)  
+                end  
+            end)  
+
+            -- 6) Đóng Rayfield an toàn (mạnh hơn)  
+            safeCall(function()  
+                if _G.Rayfield then  
+                    local rf = _G.Rayfield  
+                    if typeof(rf) == "Instance" then  
+                        pcall(function() rf:Destroy() end)  
+                    else  
+                        if type(rf.Unload) == "function" then pcall(rf.Unload, rf) end  
+                        if type(rf.Close) == "function" then pcall(rf.Close, rf) end  
+                        if type(rf.Destroy) == "function" then pcall(rf.Destroy, rf) end  
+                    end  
+                    _G.Rayfield = nil  
+                end  
+            end)  
+
+            -- 7) Dọn Status HUD (ưu tiên hàm destroy nếu có)  
+            safeCall(function()  
+                _G.ShowStatusHUD = false  
+                if type(_G.destroyStatusHUD) == "function" then  
+                    pcall(_G.destroyStatusHUD)  
+                else  
+                    local hudName = "67_Status_HUD_v1"  
+                    local parent = GetSafeGui()  
+                    if parent then  
+                        local existing = parent:FindFirstChild(hudName)  
+                        if existing and typeof(existing) == "Instance" then pcall(function() existing:Destroy() end) end  
+                    end  
+                    local coreExisting = game:GetService("CoreGui"):FindFirstChild(hudName)  
+                    if coreExisting and typeof(coreExisting) == "Instance" then pcall(function() coreExisting:Destroy() end) end  
+                end  
+            end)  
+
+            -- 8) Khôi phục Rendering quality nếu _G lưu  
+            safeCall(function()  
+                if type(_G.originalQuality) == "number" then  
+                    pcall(function() if settings and settings().Rendering then settings().Rendering.QualityLevel = _G.originalQuality end end)  
+                end  
+                _G.LowModeEnabled = false  
+                _G.LowGpu = false  
+            end)  
+
+            -- 9) Gỡ các binding phổ biến (mở rộng)  
+            safeCall(function()  
+                local CAS = game:GetService("ContextActionService")  
+                local toUnbind = {"ToggleHUD","SomeHotkeyAction","ToggleAFK","ToggleMusic","ToggleStatusHUD","AFK_Toggle","Music_Toggle"}  
+                for _, name in ipairs(toUnbind) do  
+                    pcall(function() CAS:UnbindAction(name) end)  
+                end  
+            end)  
+
+            -- 10) Ngắt kết nối jump/auto loops (nhiều tên biến)  
+            safeCall(function()  
+                local connKeys = {"_renderConn","_heartbeatConn","_steppedConn","_rendersteppedConn","_rsConn","_hbConn","_runConn","_loopConn"}  
+                for _, k in ipairs(connKeys) do  
+                    local c = _G[k]  
+                    if c then  
+                        pcall(function() if c.Connected then c:Disconnect() end end)  
+                        _G[k] = nil  
+                    end  
+                end  
+                if type(_G._connections) == "table" then  
+                    for _, c in ipairs(_G._connections) do  
+                        pcall(function() if c and c.Connected then c:Disconnect() end end)  
+                    end  
+                    _G._connections = nil  
+                end  
+            end)  
+
+            -- 11) Dọn global tables / functions / coroutines (gọi Destroy/Close/Unload nếu có)  
+            safeCall(function()  
+                local commonKeys = {"_functions","Functions","CloseFunctions","_listeners","_threads","_tasks","_loops","Connections","_modules","_widgets","_coroutines","_threads"}  
+                for _, key in ipairs(commonKeys) do  
+                    local v = _G[key]  
+                    if type(v) == "table" then  
+                        for _, obj in pairs(v) do  
+                            pcall(function()  
+                                if type(obj) == "function" then pcall(obj) end  
+                                if type(obj) == "table" then  
+                                    if type(obj.Destroy) == "function" then pcall(obj.Destroy, obj) end  
+                                    if type(obj.Close) == "function" then pcall(obj.Close, obj) end  
+                                    if type(obj.Unload) == "function" then pcall(obj.Unload, obj) end  
+                                    if type(obj.Disconnect) == "function" then pcall(obj.Disconnect, obj) end  
+                                    if type(obj.disconnect) == "function" then pcall(obj.disconnect, obj) end  
+                                end  
+                            end)  
+                        end  
+                    elseif type(v) == "function" then  
+                        pcall(v)  
+                    elseif typeof and typeof(v) == "Instance" then  
+                        pcall(function() v:Destroy() end)  
+                    end  
+                    _G[key] = nil  
+                end  
+
+                -- scan nhanh _G: nếu phát hiện table / object có Destroy/Close/Unload thì gọi  
+                for gk, gv in pairs(_G) do  
+                    pcall(function()  
+                        if type(gv) == "table" then  
+                            if type(gv.Destroy) == "function" then pcall(gv.Destroy, gv) end  
+                            if type(gv.Close) == "function" then pcall(gv.Close, gv) end  
+                            if type(gv.Unload) == "function" then pcall(gv.Unload, gv) end  
+                            if type(gv.Disconnect) == "function" then pcall(gv.Disconnect, gv) end  
+                            if type(gv.disconnect) == "function" then pcall(gv.disconnect, gv) end  
+                        end  
+                        if typeof and typeof(gv) == "Instance" then  
+                            pcall(function() if gv and gv.Destroy then gv:Destroy() end end)  
+                        end  
+                    end)  
+                end  
+            end)  
+
+            -- 12) Xóa Bindable / Remote / Module có prefix "67_" trong toàn bộ game  
+            safeCall(function()  
+                local function destroyIfPrefixed(parent)  
+                    if not parent or not parent.GetDescendants then return end  
+                    for _, inst in ipairs(parent:GetDescendants()) do  
+                        local ok, name = pcall(function() return tostring(inst.Name) end)  
+                        if ok and name and name:match("^67_") then  
+                            pcall(function() if inst.Destroy then inst:Destroy() end end)  
+                        end  
+                    end  
+                end  
+                pcall(function() destroyIfPrefixed(game:GetService("ReplicatedStorage")) end)  
+                pcall(function() destroyIfPrefixed(game:GetService("StarterGui")) end)  
+                pcall(function() destroyIfPrefixed(game:GetService("CoreGui")) end)  
+                local pl = game:GetService("Players").LocalPlayer  
+                if pl then pcall(function() destroyIfPrefixed(pl:FindFirstChild("PlayerGui")) end) end  
+            end)  
+
+            -- 14) Final cleanup: clear common temporary globals  
+            safeCall(function()  
+                local clear = {"_AUTO_LOAD","_LOADER","_MUSIC_ID","_music","_tempGui","LowGpu","LoadUi","_scriptStart"}  
+                for _, k in ipairs(clear) do _G[k] = nil end  
+            end)  
+
+            -- 15) Thông báo hoàn tất  
+            safeCall(function()  
+                game:GetService("StarterGui"):SetCore("SendNotification", {  
+                    Title = "✅ 6_7 HUB",  
+                    Text = "Đã đóng Menu và tắt tất cả chức năng!",  
+                    Duration = 5  
+                })  
+            end)  
+        end
+    })
+
+-- === Server Utilities Tab (paste this into your main script near other Window:CreateTab calls) ===
+-- Place it after the "TabUtility" creation (or before TabPlayer) so it always appears in the menu.
+-- Dependencies: expects Window and Notify to already exist (from your main script).
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local placeId = tostring(game.PlaceId or 0)
+
+-- helper to get LocalPlayer safely (waits up to 5s)
+local function getLocal()
+    if Players.LocalPlayer then return Players.LocalPlayer end
+    local start = tick()
+    while tick() - start < 5 do
+        if Players.LocalPlayer then return Players.LocalPlayer end
+        task.wait(0.1)
+    end
+    return Players.LocalPlayer
+end
+
+-- Safe clipboard setter (works across many executors)
+local function safeSetClipboard(text)
+    local ok, _ = pcall(function()
+        if setclipboard then setclipboard(text) end
+        if syn and syn.set_clipboard then syn.set_clipboard(text) end
+        if set_clipboard then set_clipboard(text) end
+        if clipboard and clipboard.set then clipboard.set(text) end
+    end)
+    return ok
+end
+
+-- Safe clipboard reader (tries common executor functions)
+local function tryReadClipboard()
+    local ok, result = pcall(function()
+        if is_sirhurt_closure then -- example for some exploit environments
+            -- no read support
+            return nil
+        end
+        if getclipboard then return getclipboard() end
+        if syn and syn.get_clipboard then return syn.get_clipboard() end
+        if clipboard and clipboard.get then return clipboard.get() end
+        -- no generic safe method; some executors expose nothing
+        return nil
+    end)
+    if ok then return result end
+    return nil
+end
+
+-- small helper to do HTTP requests in different executors (returns body string or nil)
+local function doRequest(url)
+    local req = (syn and syn.request) or (http and http.request) or http_request or request
+    if req then
+        local ok, res = pcall(function()
+            return req({ Url = url, Method = "GET" })
+        end)
+        if ok and res then
+            -- support different response field names
+            if res.Body and res.Body ~= "" then return res.Body end
+            if res.body and res.body ~= "" then return res.body end
+        end
+    end
+
+    -- fallback to Roblox's HttpGet (may be disabled depending on environment)
+    local ok2, body = pcall(function() return game:HttpGet(url, true) end)
+    if ok2 and body and body ~= "" then return body end
+
+    return nil
+end
+
+-- get a single page of public servers for this place
+local function getServerPage(cursor)
+    local url = "https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?limit=100"
+    if cursor and cursor ~= "" then
+        url = url .. "&cursor=" .. HttpService:UrlEncode(tostring(cursor))
+    end
+    local body = doRequest(url)
+    if not body then return nil end
+    local ok, data = pcall(function() return HttpService:JSONDecode(body) end)
+    if ok and type(data) == "table" then return data end
+    return nil
+end
+
+-- collect candidate servers (skips current job)
+local function collectCandidateServers(maxPages)
+    maxPages = tonumber(maxPages) or 8
+    local servers = {}
+    local cursor = nil
+    for i = 1, maxPages do -- limit pages to avoid endless loops
+        local page = getServerPage(cursor)
+        if not page then break end
+        if page.data and type(page.data) == "table" then
+            for _, s in ipairs(page.data) do
+                if s.id and tostring(s.id) ~= tostring(game.JobId) and s.playing and s.maxPlayers then
+                    table.insert(servers, s)
+                end
+            end
+        end
+        cursor = page.nextPageCursor
+        if not cursor or cursor == "" then break end
+    end
+    return servers
+end
+
+-- seed random for selection
+pcall(function() math.randomseed(tick() % 2147483647) end)
+
+local TabServer = Window:CreateTab("Server", 89902177066464)
+TabServer:CreateSection("📌 Tiện ích máy chủ")
+
+-- Button: Server Hop (random server with space)
+TabServer:CreateButton({
+    Name = "🔁 Server Hop",
+    Callback = function()
+        Notify("Server", "Tìm server khác...")
+        local servers = collectCandidateServers()
+        if not servers or #servers == 0 then
+            Notify("Server", "Không tìm được server (cần mở HTTP hoặc thử lại).")
+            return
+        end
+
+        -- filter servers that are not full
+        local available = {}
+        for _, s in ipairs(servers) do
+            if tonumber(s.playing) and tonumber(s.maxPlayers) and tonumber(s.playing) < tonumber(s.maxPlayers) then
+                table.insert(available, s)
+            end
+        end
+
+        if #available == 0 then
+            Notify("Server", "Tạm thời không có server trống, chọn ngẫu nhiên...")
+            available = servers
+        end
+
+        local chosen = available[math.random(1, #available)]
+        if not chosen or not chosen.id then
+            Notify("Server", "Không thể chọn server.")
+            return
+        end
+
+        Notify("Server", "Đang chuyển sang server: " .. tostring(chosen.id))
+        local LocalPlayer = getLocal()
+        if not LocalPlayer then
+            Notify("Server", "Lỗi: LocalPlayer chưa sẵn sàng.")
+            return
+        end
+        pcall(function()
+            TeleportService:TeleportToPlaceInstance(game.PlaceId, tostring(chosen.id), LocalPlayer)
+        end)
+    end
+})
+
+-- Button: Join Smallest Server (find server with fewest players)
+TabServer:CreateButton({
+    Name = "🔍 Tham gia máy chủ nhỏ nhất",
+    Callback = function()
+        Notify("Server", "Tìm server ít người nhất...")
+        local servers = collectCandidateServers()
+        if not servers or #servers == 0 then
+            Notify("Server", "Không tìm được server (cần mở HTTP hoặc thử lại).")
+            return
+        end
+
+        local best = nil
+        for _, s in ipairs(servers) do
+            if s.id and s.playing then
+                if not best or (tonumber(s.playing) or 0) < (tonumber(best.playing) or 0) then
+                    best = s
+                end
+            end
+        end
+
+        if not best or not best.id then
+            Notify("Server", "Không tìm được server phù hợp.")
+            return
+        end
+
+        Notify("Server", string.format("Đang join server %s (%d/%d)", tostring(best.id), tonumber(best.playing) or 0, tonumber(best.maxPlayers) or 0))
+        local LocalPlayer = getLocal()
+        if not LocalPlayer then
+            Notify("Server", "Lỗi: LocalPlayer chưa sẵn sàng.")
+            return
+        end
+        pcall(function()
+            TeleportService:TeleportToPlaceInstance(game.PlaceId, tostring(best.id), LocalPlayer)
+        end)
+    end
+})
+
+-- Button: Rejoin Server (reconnect to current JobId)
+TabServer:CreateButton({
+    Name = "⤴️ Rejoin Server",
+    Callback = function()
+        local jid = tostring(game.JobId or "")
+        if not jid or jid == "" then
+            Notify("Server", "Không thể lấy JobId hiện tại.")
+            return
+        end
+        Notify("Server", "Đang join lại server hiện tại: " .. jid)
+        local LocalPlayer = getLocal()
+        if not LocalPlayer then
+            Notify("Server", "Lỗi: LocalPlayer chưa sẵn sàng.")
+            return
+        end
+        pcall(function() TeleportService:TeleportToPlaceInstance(game.PlaceId, jid, LocalPlayer) end)
+    end
+})
+
+-- New: Copy JobID (placed under Rejoin Server as requested)
+TabServer:CreateButton({
+    Name = "📋 Copy JobID",
+    Callback = function()
+        local jid = tostring(game.JobId or "")
+        if jid == "" then
+            Notify("Server", "Không thể lấy JobID hiện tại.")
+            return
+        end
+        if safeSetClipboard(jid) then
+            Notify("Server", "Đã copy JobID vào clipboard.")
+        else
+            Notify("Server", "Không thể copy (executor không hỗ trợ). JobID: " .. jid)
+        end
+    end
+})
+
+-- (MOVED) Optional: small label showing current JobId — now placed directly under the Copy JobID button
+TabServer:CreateLabel("JobID: " .. tostring(game.JobId or ""))
+
+-- =======================================================
+-- NEW FEATURE: Join by JobID 
+-- =======================================================
+local TargetJobID = ""
+TabServer:CreateInput({
+    Name = "🔎 Nhập JobID",
+    PlaceholderText = "Dán JobID cần vào đây...",
+    RemoveTextAfterFocusLost = false,
+    Callback = function(Text)
+        TargetJobID = Text
+    end
+})
+
+TabServer:CreateButton({
+    Name = "Vào Server bằng JobID",
+    Callback = function()
+        -- Lấy chuỗi và dọn dẹp khoảng trắng dư thừa
+        local cleanJobID = string.match(TargetJobID, "^%s*(.-)%s*$")
+
+        if cleanJobID == "" then
+            Notify("Server", "❌ Vui lòng nhập JobID trước!")
+            return
+        end
+        
+        -- JobID hợp lệ thường là một chuỗi UUID (ví dụ: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+        -- Kiểm tra cơ bản độ dài để tránh bị lỗi format
+        if string.len(cleanJobID) < 10 then
+            Notify("Server", "❌ JobID không hợp lệ! Vui lòng kiểm tra lại.")
+            return
+        end
+
+        Notify("Server", "⏳ Đang thử kết nối vào JobID: " .. cleanJobID)
+        
+        local LocalPlayer = getLocal()
+        if not LocalPlayer then
+            Notify("Server", "❌ Lỗi: LocalPlayer chưa sẵn sàng.")
+            return
+        end
+
+        -- Sử dụng pcall để bắt lỗi nếu Teleport bị API từ chối ngay lập tức
+        local success, err = pcall(function()
+            -- Lệnh này sẽ yêu cầu dịch chuyển với PlaceId hiện tại. 
+            -- Nếu JobID không thuộc PlaceId này, nó sẽ thất bại.
+            TeleportService:TeleportToPlaceInstance(game.PlaceId, cleanJobID, LocalPlayer)
+        end)
+
+        if not success then
+            -- Bắt được lỗi từ executor (nếu API từ chối lập tức)
+            Notify("Server", "❌ Lỗi: JobID này không tồn tại hoặc KHÔNG thuộc game này!")
+        else
+            -- Teleport đã được gửi đi. Đợi 4 giây, nếu player vẫn còn ở server cũ, báo lỗi.
+            task.delay(4, function()
+                Notify("Server", "⚠️ Cảnh báo: Nếu chưa được dịch chuyển, JobID có thể KHÔNG thuộc game này hoặc server đã đầy!")
+            end)
+        end
+    end
+})
+-- =======================================================
+
+-- New: Copy teleport to CURRENT JobId (uses current game.JobId only)
+TabServer:CreateButton({
+    Name = "📎 Code vào sever này! ",
+    Callback = function()
+        local jid = tostring(game.JobId or "")
+        local code
+        if jid == "" then
+            code = string.format('game:GetService("TeleportService"):TeleportToPlaceInstance(%s, "<JOBID HERE>", game.Players.LocalPlayer)', placeId)
+        else
+            code = string.format('game:GetService("TeleportService"):TeleportToPlaceInstance(%s, "%s", game.Players.LocalPlayer)', placeId, jid)
+        end
+
+        if safeSetClipboard(code) then
+            Notify("Server", "Đã copy teleport code (current) vào clipboard.")
+        else
+            Notify("Server", "Không thể copy (executor không hỗ trợ).\nTeleport code: " .. code)
+        end
+    end
+})
+
+-- New: Copy collected servers as JSON (for debugging / sharing)
+TabServer:CreateButton({
+    Name = "🗂️ Sao chép danh sách máy chủ (JSON)",
+    Callback = function()
+        Notify("Server", "Thu thập danh sách server (có thể mất vài giây)...")
+        local servers = collectCandidateServers(6)
+        if not servers or #servers == 0 then
+            Notify("Server", "Không lấy được server để copy.")
+            return
+        end
+        local ok, j = pcall(function() return HttpService:JSONEncode(servers) end)
+        if not ok or not j then
+            Notify("Server", "Không thể mã hoá JSON.")
+            return
+        end
+        if safeSetClipboard(j) then
+            Notify("Server", "Đã copy danh sách server (JSON) vào clipboard.")
+        else
+            Notify("Server", "Không thể copy (executor không hỗ trợ). Bắt đầu in JSON trong console...")
+            print(j)
+        end
+    end
+})
+
+-- Note: createTextInput and the Join-by-JobID logic were intentionally removed per request to eliminate the "🔎 Enter JobID" UI and related features.
+local TabAbout = Window:CreateTab("Thông tin", 4871684504)
+TabAbout:CreateSection("📌 Thông tin chi tiết")
+TabAbout:CreateLabel("「Game Hiện Tại」: " .. (GameName or "N/A"))
+TabAbout:CreateLabel("「PlaceID」: " .. (PlaceID or "N/A"))
+TabAbout:CreateLabel("「Anti-Kick」: Hoạt động 🟢")
+-- Thay nút hiển thị uptime bằng LABEL cập nhật liên tục (PHẦN ĐÃ FIX)
+local UptimeLabel = TabAbout:CreateLabel("「Thời gian chạy」: 00:00:00")
+-- đảm bảo _G._scriptStart tồn tại và là number (chỉ thiết lập 1 lần)
+_G._scriptStart = _G._scriptStart or tick()
+if type(_G._scriptStart) == "string" then
+    _G._scriptStart = tonumber(_G._scriptStart) or tick()
+end
+if type(_G._scriptStart) ~= "number" then
+    _G._scriptStart = tick()
+end
+
+task.spawn(function()
+    -- Lấy startVal một lần ở đây (không gán lại mỗi vòng)
+    local startVal = _G._scriptStart
+
+    while true do
+        local uptime = math.floor(tick() - startVal)
+        if uptime < 0 then uptime = 0 end
+
+        local hh = math.floor(uptime / 3600)
+        local mm = math.floor((uptime % 3600) / 60)
+        local ss = math.floor(uptime % 60)
+        local text = string.format("「Thời gian chạy」: %02d:%02d:%02d", hh, mm, ss)
+
+        -- Cập nhật label với nhiều fallback (tương thích Rayfield các phiên bản)
+        pcall(function()
+            if type(UptimeLabel) == "table" then
+                if UptimeLabel.SetText then
+                    UptimeLabel:SetText(text)
+                elseif UptimeLabel.Set then
+                    UptimeLabel:Set(text)
+                elseif rawget(UptimeLabel, "Label") and type(UptimeLabel.Label) == "Instance" then
+                    UptimeLabel.Label.Text = text
+                else
+                    UptimeLabel.Text = text
+                end
+            elseif typeof and typeof(UptimeLabel) == "Instance" then
+                UptimeLabel.Text = text
+            else
+                -- Fallback: tìm TextLabel chứa "Thời gian chạy"
+                pcall(function()
+                    for _, v in pairs(game:GetService("CoreGui"):GetDescendants()) do
+                        if v:IsA("TextLabel") and string.find(v.Text or "", "Thời gian chạy") then
+                            v.Text = text
+                        end
+                    end
+                end)
+            end
+        end)
+
+        task.wait(1)
+    end
+end)
+TabAbout:CreateLabel("Created by hizuma_67")
+TabAbout:CreateSection("ℹ️ Thông tin bổ sung")
+TabAbout:CreateButton({
+    Name = "Xem Changelog ngắn",
+    Callback = function()
+        local changelog = [[
+「Phiên bản BETA」:
+- Thêm icon menu
+- Xoá bỏ bảng rác
+- Thêm Script blox fruits
+- Update Weebhook Discord 
+- More updates coming soon.
+]]
+        Notify("Changelog", changelog)
+    end,
+})
+
+local DiscordCopied = false
+TabAbout:CreateSection("🤝 Discord/Helps")	
+TabAbout:CreateButton({
+    Name = " Cộng đồng Discord/Trợ giúp",
+    Callback = function()
+        if not DiscordCopied then
+            setclipboard("https://discord.gg/aKAChQZRk")
+            Notify("Discord", "Đã sao chép link Discord vào bộ nhớ tạm!")
+            DiscordCopied = true
+        else
+            Notify("Thông báo", "Bạn đã sao chép link rồi!")
+        end
+    end
+})
+
+-- [PHẦN MỚI THÊM: NÚT TIKTOK VỚI ICON]
+local TiktokCopied = false
+TabAbout:CreateButton({
+    Name = " Kênh Tiktok",
+    Callback = function()
+        if not TiktokCopied then
+            setclipboard("https://www.tiktok.com/@kaiiz_12")
+            Notify("Tiktok", "Đã sao chép link Tiktok vào bộ nhớ tạm!")
+            TiktokCopied = true
+        else
+            Notify("Thông báo", "Bạn đã sao chép link Tiktok rồi!")
+        end
+    end
+})
+end
+----------------------------------------------------------------
+-- CHẠY LOADING TRƯỚC, RAYFIELD SAU (TỐI ƯU HÓA RE-EXECUTE)
+----------------------------------------------------------------
+local function RunLoading()
+    -- NẾU LÀ RE-EXECUTE -> BỎ QUA LOADING, MỞ THẲNG MENU
+    if isReExecution then
+        if LoadingGui then LoadingGui:Destroy() end
+        StartRayfield()
+        -- Không gọi ShowGlobalAnnouncement() để chống spam
+        return
+    end
+
+    -- NẾU LÀ CHẠY LẦN ĐẦU -> HIỂN THỊ LOADING GALAXY
+    local steps = {
+        {0.15, "Đang kiểm tra giao thức bảo mật..."},
+        {0.35, "Đang tải tài sản hệ thống..."},
+        {0.55, "Chèn các tập lệnh chính..."},
+        {0.75, "Đồng bộ hóa các phần tử giao diện người dùng..."},
+        {0.90, "Đang hoàn tất cấu hình..."},
+        {1.0, "✨ Hệ thống đã sẵn sàng!"}
+    }
+    for _, s in ipairs(steps) do
+        TweenService:Create(BarFill, TweenInfo.new(1.0, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = UDim2.new(s[1], 0, 1, 0)}):Play()
+        StatusText.Text = s[2]
+        task.wait(0.6) 
+    end
+    
+    task.wait(0.5)
+  
+    -- [FIX]: Nếu user vừa Execute thêm lần nữa trong lúc đang chờ Loading, tự động hủy luồng cũ này!
+    if currentExecute ~= _G.Hizuma67_ExecuteCount then 
+        return 
+    end
+
+    if LoadingGui then LoadingGui:Destroy() end
+    StartRayfield()
+    -- Chỉ gọi thông báo Global khi lần đầu khởi chạy
+    pcall(function()
+        ShowGlobalAnnouncement()
+    end)
+end
+
+-- KÍCH HOẠT HỆ THỐNG
+RunLoading()
+
+----------------------------------------------------------------
+-- HỆ THỐNG ANTI-AFK CHẠY NGẦM
+----------------------------------------------------------------
+Player.Idled:Connect(function()
+    if _G.AntiAFK then
+        pcall(function()
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton2(Vector2.new())
+        end)
+    end
+end)
+
+-- [BẢN VÁ LỖI KẸT NÚT TSB TRÊN ĐIỆN THOẠI]
+task.spawn(function()
+    local Players = game:GetService("Players")
+    local UserInputService = game:GetService("UserInputService")
+    local CoreGui = game:GetService("CoreGui")
+
+    local function FixMobileTouchBlocks(char)
+        if char then pcall(function() char:WaitForChild("Humanoid", 5) end) end
+
+        for i = 1, 3 do
+            pcall(function()
+                local player = Players.LocalPlayer
+                if not player then return end
+
+                if UserInputService.ModalEnabled then
+                    UserInputService.ModalEnabled = false
+                end
+
+                local playerGui = player:FindFirstChild("PlayerGui")
+                if playerGui then
+                    local touchGui = playerGui:FindFirstChild("TouchGui")
+                    if touchGui and touchGui:FindFirstChild("TouchControlFrame") then
+                        touchGui.TouchControlFrame.Visible = true
+                    end
+                end
+
+                for _, gui in ipairs(CoreGui:GetChildren()) do
+                    if gui:IsA("ScreenGui") and tostring(gui.Name) == "LoadingGui" then
+                        gui:Destroy()
+                    end
+                end
+            end)
+            task.wait(1) 
+        end
+    end
+
+    local player = Players.LocalPlayer
+    if player then
+        if _G._tsbMobileFixConn then
+            pcall(function() _G._tsbMobileFixConn:Disconnect() end)
+        end
+        _G._tsbMobileFixConn = player.CharacterAdded:Connect(function(char)
+            task.spawn(FixMobileTouchBlocks, char)
+        end)
+        if player.Character then
+            task.spawn(FixMobileTouchBlocks, player.Character)
+        end
+    end
+end)
